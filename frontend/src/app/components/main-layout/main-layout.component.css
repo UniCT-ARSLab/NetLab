@@ -1,0 +1,295 @@
+.docker-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(9, 9, 11, 0.88);
+  backdrop-filter: blur(4px);
+}
+
+.docker-gate__card {
+  width: 460px;
+  padding: 2.5rem 2.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  text-align: center;
+  background: #18181b;
+  border: 1px solid #3f3f46;
+  border-radius: 16px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+}
+
+.docker-gate__icon {
+  font-size: 3rem;
+  color: var(--p-primary-color);
+}
+
+.docker-gate__icon--warn {
+  color: #f59e0b;
+}
+
+.docker-gate__title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #fafafa;
+}
+
+.docker-gate__body {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: #a1a1aa;
+}
+
+.docker-gate__steps {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  text-align: left;
+  font-size: 0.875rem;
+}
+
+.docker-gate__steps li {
+  padding: 0.6rem 0.875rem;
+  line-height: 1.5;
+  background: #27272a;
+  border: 1px solid #3f3f46;
+  border-radius: 8px;
+  color: #d4d4d8;
+}
+
+.platform-label {
+  display: block;
+  margin-bottom: 0.15rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #71717a;
+}
+
+:host ::ng-deep .docker-gate__steps strong {
+  color: #fafafa;
+  font-weight: 600;
+}
+
+:host ::ng-deep .docker-gate__steps code {
+  padding: 0.1em 0.35em;
+  font-size: 0.8rem;
+  font-family: monospace;
+  background: #3f3f46;
+  border-radius: 4px;
+  color: #e4e4e7;
+}
+
+/* ── App shell ─────────────────────────────────────────────────────── */
+
+.netlab-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--p-surface-0);
+}
+
+.netlab-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.netlab-sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  border-right: 1px solid #3f3f46;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #18181b;
+}
+
+.netlab-canvas {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--p-surface-200);
+}
+
+/* ── Canvas placeholder ────────────────────────────────────────────── */
+
+.canvas-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--p-text-muted-color);
+  font-size: 0.875rem;
+}
+
+.canvas-placeholder__icon {
+  font-size: 3rem;
+  opacity: 0.2;
+}
+
+/* ── Node detail card ──────────────────────────────────────────────── */
+
+.node-detail {
+  background: var(--p-surface-0);
+  border: 1px solid var(--p-surface-border);
+  border-radius: 12px;
+  padding: 1.75rem;
+  min-width: 340px;
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+}
+
+.node-detail__header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.node-detail__server-icon {
+  font-size: 1.5rem;
+  color: var(--p-primary-color);
+}
+
+.node-detail__name {
+  flex: 1;
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--p-text-muted-color);
+}
+
+.node-detail__meta {
+  display: flex;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.875rem;
+  color: var(--p-text-muted-color);
+}
+
+.node-detail__interfaces {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.node-detail__section-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--p-text-muted-color);
+  margin-bottom: 0.25rem;
+}
+
+.iface-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  padding: 0.2rem 0;
+}
+
+.iface-row .pi {
+  font-size: 0.8rem;
+  color: var(--p-text-muted-color);
+}
+
+.iface-row__name {
+  font-weight: 500;
+  color: var(--p-primary-color);
+}
+
+.iface-row__link {
+  color: var(--p-primary-color);
+}
+
+/* ── Link dialog ───────────────────────────────────────────────────── */
+
+.link-dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.link-dialog-hint {
+  font-size: 0.875rem;
+  color: var(--p-text-muted-color);
+  line-height: 1.5;
+}
+
+.link-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.link-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.25rem;
+  border-radius: 6px;
+}
+
+.link-row:hover {
+  background: var(--p-surface-hover);
+}
+
+.link-row__icon {
+  color: var(--p-primary-color);
+}
+
+.link-row__name {
+  flex: 1;
+  font-weight: 500;
+}
+
+.link-row__nodes {
+  font-size: 0.8rem;
+  color: var(--p-text-muted-color);
+}
+
+.link-create-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.link-create-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.link-create-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.link-create-input {
+  flex: 1;
+}

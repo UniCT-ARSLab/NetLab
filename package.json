@@ -1,0 +1,93 @@
+{
+  "name": "netlab-app",
+  "version": "1.0.0",
+  "description": "Network Lab tool for students",
+  "main": "dist/electron/main.js",
+  "scripts": {
+    "start": "concurrently \"npm run start:frontend\" \"npm run start:backend\"",
+    "start:frontend": "cd frontend && ng serve",
+    "start:backend": "tsc -p tsconfig.backend.json --watch",
+    "electron": "wait-on http://localhost:4200 && electron .",
+    "dev": "concurrently \"npm run start:frontend\" \"npm run start:backend\" \"npm run electron\"",
+    "build:frontend": "cd frontend && ng build --output-path ../dist/frontend --base-href ./",
+    "build:backend": "tsc -p tsconfig.backend.json",
+    "build:all": "npm run build:frontend && npm run build:backend",
+    "package": "npm run build:all && electron-builder",
+    "package:win": "npm run build:all && electron-builder --win",
+    "package:mac": "npm run build:all && electron-builder --mac",
+    "package:linux": "npm run build:all && electron-builder --linux",
+    "postinstall": "node scripts/fix-pty-permissions.js"
+  },
+  "dependencies": {
+    "dockerode": "^4.0.2",
+    "node-pty": "^1.1.0",
+    "uuid": "^10.0.0"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^4.0.4",
+    "@types/dockerode": "^3.3.23",
+    "@types/node": "^20.0.0",
+    "@types/uuid": "^10.0.0",
+    "concurrently": "^8.0.0",
+    "electron": "^41.7.0",
+    "electron-builder": "^26.8.1",
+    "typescript": "^5.3.0",
+    "wait-on": "^7.0.0"
+  },
+  "build": {
+    "appId": "com.netlab.app",
+    "productName": "NetLab",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "package.json"
+    ],
+    "asarUnpack": [
+      "**/node_modules/node-pty/**"
+    ],
+    "afterPack": "scripts/afterPack.js",
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "shortcutName": "NetLab",
+      "deleteAppDataOnUninstall": false
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "category": "public.app-category.education"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "category": "Education"
+    }
+  }
+}

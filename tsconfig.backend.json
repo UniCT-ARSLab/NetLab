@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "outDir": "./dist", // I file compilati andranno qui
+    "rootDir": "./",    // La base è la root del progetto
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "sourceMap": true,
+    "types": ["node", "uuid"]
+  },
+  "include": ["electron/main.ts", "electron/**/*", "backend/**/*"],
+  "exclude": ["node_modules", "dist", "frontend"]
+}

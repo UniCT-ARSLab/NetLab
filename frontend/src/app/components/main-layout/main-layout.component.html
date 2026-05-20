@@ -1,0 +1,162 @@
+@if (dockerStatus() !== 'ok') {
+  <div class="docker-gate">
+    <div class="docker-gate__card">
+      @if (dockerStatus() === 'checking') {
+        <i class="pi pi-spinner pi-spin docker-gate__icon"></i>
+        <h2 class="docker-gate__title">{{ 'docker.checking.title' | translate }}</h2>
+        <p class="docker-gate__body">{{ 'docker.checking.body' | translate }}</p>
+      } @else {
+        <i class="pi pi-box docker-gate__icon docker-gate__icon--warn"></i>
+        <h2 class="docker-gate__title">{{ 'docker.unavailable.title' | translate }}</h2>
+        <p class="docker-gate__body" [innerHTML]="'docker.unavailable.body' | translate"></p>
+        <ul class="docker-gate__steps">
+          <li>
+            <span class="platform-label">{{ 'docker.unavailable.win-label' | translate }}</span>
+            <span [innerHTML]="'docker.unavailable.win-text' | translate"></span>
+          </li>
+          <li>
+            <span class="platform-label">Linux</span>
+            <span [innerHTML]="'docker.unavailable.linux-text' | translate"></span>
+          </li>
+        </ul>
+        <p-button [label]="'btn.retry' | translate" icon="pi pi-refresh" (onClick)="retryDockerCheck()" />
+      }
+    </div>
+  </div>
+}
+
+<div class="netlab-shell">
+
+  <app-toolbar
+    [selectedNode]="selectedNode()"
+    [isLoading]="isSelectedNodeLoading()"
+    (createClicked)="openCreateDialog()"
+    (editClicked)="openEditDialog()"
+    (deleteClicked)="onDelete()"
+    (startClicked)="onStart()"
+    (stopClicked)="onStop()"
+    (attachClicked)="onAttach()"
+    (linksClicked)="openLinkDialog()" />
+
+  <div class="netlab-body">
+
+    <aside class="netlab-sidebar">
+      <app-node-list
+        [selectedNodeId]="selectedNodeId()"
+        [loadingNodeIds]="loadingNodeIds()"
+        (nodeSelected)="onNodeSelected($event)"
+        (createRequested)="showCreateDialog = true" />
+    </aside>
+
+    <main class="netlab-canvas">
+      @if (!selectedNode()) {
+        <div class="canvas-placeholder">
+          <i class="pi pi-sitemap canvas-placeholder__icon"></i>
+          <span>{{ 'nodes.select' | translate }}</span>
+        </div>
+      } @else {
+        <div class="node-detail">
+          <div class="node-detail__header">
+            <i class="pi pi-server node-detail__server-icon"></i>
+            <h2 class="node-detail__name">{{ selectedNode()!.name }}</h2>
+            <p-tag
+              [value]="selectedNode()!.status"
+              [severity]="statusSeverity(selectedNode()!.status)"
+              [rounded]="true" />
+          </div>
+
+          <div class="node-detail__meta">
+            <span class="meta-item">
+              <i class="pi pi-box"></i>{{ selectedNode()!.image || '—' }}
+            </span>
+            @if (selectedNode()!.cpuLimit) {
+              <span class="meta-item">
+                <i class="pi pi-microchip"></i>{{ selectedNode()!.cpuLimit }} core
+              </span>
+            }
+            @if (selectedNode()!.memoryMb) {
+              <span class="meta-item">
+                <i class="pi pi-gauge"></i>{{ selectedNode()!.memoryMb }} MB
+              </span>
+            }
+          </div>
+
+          @if (selectedNode()!.interfaces.length > 0) {
+            <div class="node-detail__interfaces">
+              <span class="node-detail__section-label">{{ 'node.interfaces' | translate }}</span>
+              @for (iface of selectedNode()!.interfaces; track $index) {
+                <div class="iface-row">
+                  <i class="pi pi-share-alt"></i>
+                  <span class="iface-row__name">{{ iface.name }}</span>
+                  @if (iface.linkName) {
+                    <span class="iface-row__link">→ {{ iface.linkName }}</span>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </main>
+
+  </div>
+</div>
+
+<app-node-form
+  [visible]="showCreateDialog"
+  (visibleChange)="showCreateDialog = $event"
+  (nodeCreated)="onNodeCreated()" />
+
+<app-node-form
+  [visible]="showEditDialog"
+  [editNode]="selectedNode()"
+  (visibleChange)="showEditDialog = $event"
+  (nodeUpdated)="onNodeUpdated()" />
+
+<p-dialog
+  [(visible)]="showLinkDialog"
+  [header]="'links.title' | translate"
+  [modal]="true"
+  [style]="{ width: '460px' }"
+  [draggable]="false"
+  [resizable]="false">
+
+  <div class="link-dialog-body">
+    <p class="link-dialog-hint">{{ 'links.hint' | translate }}</p>
+
+    @if (links().length > 0) {
+      <div class="link-list">
+        @for (link of links(); track link.name) {
+          <div class="link-row">
+            <i class="pi pi-share-alt link-row__icon"></i>
+            <span class="link-row__name">{{ link.name }}</span>
+            <span class="link-row__nodes">
+              {{ link.connectedNodes.length }}
+              {{ (link.connectedNodes.length === 1 ? 'links.node' : 'links.nodes') | translate }}
+            </span>
+            <p-button icon="pi pi-trash" severity="danger" [text]="true"
+              size="small" (onClick)="deleteLink(link.name)" />
+          </div>
+        }
+      </div>
+      <p-divider />
+    }
+
+    <div class="link-create-section">
+      <label class="link-create-label">{{ 'links.new-link' | translate }}</label>
+      <div class="link-create-row">
+        <input pInputText [(ngModel)]="newLinkName" [placeholder]="'links.placeholder' | translate"
+          (keyup.enter)="createLink()" class="link-create-input" />
+        <p-button icon="pi pi-plus" [label]="'links.create' | translate" (onClick)="createLink()"
+          [disabled]="!newLinkName.trim()" />
+      </div>
+    </div>
+  </div>
+
+  <ng-template #footer>
+    <p-button [label]="'btn.close' | translate" severity="secondary" (onClick)="showLinkDialog = false" />
+  </ng-template>
+</p-dialog>
+
+<p-toast position="bottom-right" />
+<p-confirmDialog />

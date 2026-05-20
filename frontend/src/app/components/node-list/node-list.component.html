@@ -1,0 +1,32 @@
+<div class="sidebar-header">
+  <span class="sidebar-title">{{ 'nodes.title' | translate }}</span>
+  @if (nodes().length > 0) {
+    <span class="sidebar-count">{{ nodes().length }}</span>
+  }
+</div>
+
+@if (nodes().length === 0) {
+  <div class="sidebar-empty">
+    <i class="pi pi-sitemap"></i>
+    <span>{{ 'nodes.empty' | translate }}</span>
+    <p-button [label]="'btn.add' | translate" icon="pi pi-plus" size="small" [text]="true"
+      (onClick)="createRequested.emit()" />
+  </div>
+} @else {
+  <div class="node-list">
+    @for (node of nodes(); track node.id) {
+      <div class="node-row"
+           [class.node-row--selected]="node.id === selectedNodeId"
+           [class.node-row--loading]="loadingNodeIds.has(node.id)"
+           (click)="nodeSelected.emit(node)">
+        @if (loadingNodeIds.has(node.id)) {
+          <i class="pi pi-spinner pi-spin node-row__spinner"></i>
+        } @else {
+          <i class="pi pi-server node-row__icon"></i>
+        }
+        <span class="node-row__name">{{ node.name }}</span>
+        <span class="status-dot status-dot--{{ node.status }}" [title]="node.status"></span>
+      </div>
+    }
+  </div>
+}

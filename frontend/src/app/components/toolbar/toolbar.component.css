@@ -1,0 +1,97 @@
+.netlab-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  padding-right: 0.25rem;
+}
+
+.netlab-brand .pi {
+  font-size: 1.2rem;
+  color: var(--p-primary-color);
+}
+
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.lang-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: none;
+  border: 1px solid var(--p-surface-border);
+  border-radius: 6px;
+  padding: 0.2rem 0.5rem;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--p-text-muted-color);
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.lang-toggle:hover {
+  border-color: var(--p-primary-color);
+  color: var(--p-primary-color);
+}
+
+/* macOS: space for native traffic lights (x=16, 3×12px + gaps ≈ 72px) */
+.mac-spacer {
+  width: 80px;
+  flex-shrink: 0;
+}
+
+/* Window controls – Windows / Linux */
+.win-controls {
+  display: flex;
+  align-self: stretch;
+  margin-top: -0.5rem;
+  margin-bottom: -0.5rem;
+  margin-right: -1rem;
+  margin-left: 0.5rem;
+  -webkit-app-region: no-drag;
+}
+
+.win-ctrl {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  background: none;
+  border: none;
+  outline: none;
+  cursor: default;
+  color: var(--p-text-color);
+  font-size: 11px;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  transition: background 0.1s, color 0.1s;
+  -webkit-app-region: no-drag;
+}
+
+.win-ctrl:hover {
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
+
+.win-ctrl--close:hover {
+  background: #c42b1c;
+  color: #fff;
+}
+
+:host ::ng-deep .p-toolbar {
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  padding: 0.5rem 1rem;
+  -webkit-app-region: drag;
+}
+
+:host ::ng-deep .p-toolbar button,
+:host ::ng-deep .p-toolbar a,
+.lang-toggle {
+  -webkit-app-region: no-drag;
+}

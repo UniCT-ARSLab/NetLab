@@ -1,0 +1,77 @@
+<p-toolbar>
+  <ng-template #start>
+    @if (platform === 'darwin') {
+      <div class="mac-spacer"></div>
+    }
+    <div class="netlab-brand">
+      <i class="pi pi-sitemap"></i>
+      <span>NetLab</span>
+    </div>
+    <p-divider layout="vertical" />
+    <div class="toolbar-actions">
+      <p-button [label]="'btn.create' | translate" icon="pi pi-plus" size="small"
+        (onClick)="createClicked.emit()" />
+
+      <p-button [label]="'btn.edit' | translate" icon="pi pi-pencil" size="small"
+        severity="warn"
+        [disabled]="!canEdit"
+        (onClick)="editClicked.emit()" />
+
+      <p-button [label]="'btn.delete' | translate" icon="pi pi-trash" size="small"
+        severity="danger"
+        [disabled]="!canDelete"
+        (onClick)="deleteClicked.emit()" />
+
+      <p-divider layout="vertical" />
+
+      <p-button label="Start" icon="pi pi-play" size="small"
+        severity="success" [outlined]="true"
+        [disabled]="!canStart"
+        (onClick)="startClicked.emit()" />
+
+      <p-button label="Stop" icon="pi pi-stop-circle" size="small"
+        severity="warn" [outlined]="true"
+        [disabled]="!canStop"
+        (onClick)="stopClicked.emit()" />
+
+      <p-divider layout="vertical" />
+
+      <p-button label="Attach" icon="pi pi-desktop" size="small"
+        severity="info"
+        [disabled]="!canAttach"
+        (onClick)="attachClicked.emit()" />
+    </div>
+  </ng-template>
+
+  <ng-template #end>
+    <div class="toolbar-actions">
+      <p-button label="Links" icon="pi pi-sitemap" size="small"
+        severity="secondary" [outlined]="true"
+        (onClick)="linksClicked.emit()" />
+      <p-divider layout="vertical" />
+      <button class="lang-toggle" (click)="switchLang()">
+        <i class="pi pi-globe"></i>
+        {{ lang().toUpperCase() }}
+      </button>
+    </div>
+
+    @if (platform === 'win32' || platform === 'linux') {
+      <div class="win-controls">
+        <button class="win-ctrl" (click)="minimize()" title="Minimize">&#x2500;</button>
+        <button class="win-ctrl" (click)="toggleMaximize()" [title]="isMaximized() ? 'Restore' : 'Maximize'">
+          @if (isMaximized()) {
+            <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="3" y="0.75" width="7.25" height="7.25" style="fill:var(--p-surface-0)"/>
+              <rect x="0.75" y="3" width="7.25" height="7.25" style="fill:var(--p-surface-0)"/>
+            </svg>
+          } @else {
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="0.75" y="0.75" width="8.5" height="8.5"/>
+            </svg>
+          }
+        </button>
+        <button class="win-ctrl win-ctrl--close" (click)="closeWin()" title="Close">&#x2715;</button>
+      </div>
+    }
+  </ng-template>
+</p-toolbar>

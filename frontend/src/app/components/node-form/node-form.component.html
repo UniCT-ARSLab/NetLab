@@ -1,0 +1,119 @@
+<p-dialog
+  [visible]="visible"
+  (visibleChange)="visibleChange.emit($event)"
+  (onHide)="visibleChange.emit(false)"
+  [header]="dialogHeader"
+  [modal]="true"
+  [style]="{ width: '500px' }"
+  [draggable]="false"
+  [resizable]="false">
+
+  <div class="form-body">
+
+    <div class="field">
+      <label for="nodeName">{{ 'form.name-label' | translate }}</label>
+      <input pInputText id="nodeName" [(ngModel)]="name"
+        [placeholder]="'form.name-placeholder' | translate" [fluid]="true" />
+    </div>
+
+    <div class="field">
+      <label>{{ 'form.image-label' | translate }}</label>
+      <p-select [(ngModel)]="image" [options]="imageOptions"
+        optionLabel="label" optionValue="value" [fluid]="true" />
+    </div>
+
+    <p-divider><span class="divider-label">{{ 'form.resources' | translate }}</span></p-divider>
+
+    <div class="field-row">
+      <div class="field">
+        <label>{{ 'form.ram-label' | translate }}</label>
+        <p-inputnumber [(ngModel)]="memoryMb" [min]="64" [max]="4096"
+          [step]="64" suffix=" MB" [fluid]="true" />
+      </div>
+      <div class="field">
+        <label>{{ 'form.cpu-label' | translate }}</label>
+        <p-inputnumber [(ngModel)]="cpuLimit" [min]="0.1" [max]="4"
+          [step]="0.1" [minFractionDigits]="1" [maxFractionDigits]="1"
+          suffix=" core" [fluid]="true" />
+      </div>
+    </div>
+
+    <p-divider><span class="divider-label">{{ 'form.interfaces-section' | translate }}</span></p-divider>
+
+    @if (links().length === 0) {
+      <small class="field-hint">
+        <i class="pi pi-info-circle"></i>
+        <span>{{ 'form.no-links-hint' | translate }}</span>
+      </small>
+    }
+
+    @if (editNode?.status === 'running' && interfaces.length > 0) {
+      <small class="field-hint field-hint--warn">
+        <i class="pi pi-exclamation-triangle"></i>
+        <span>{{ 'form.running-iface-hint' | translate }}</span>
+      </small>
+    }
+
+    <div class="interfaces-list">
+      @for (iface of interfaces; track $index; let i = $index) {
+        <div class="iface-row">
+          <input pInputText [(ngModel)]="iface.name" class="iface-row__name" />
+          <p-select [(ngModel)]="iface.linkName" [options]="linkOptions()"
+            optionLabel="label" optionValue="value"
+            [placeholder]="'form.no-link-option' | translate" class="iface-row__link" />
+          <p-button icon="pi pi-times" severity="danger" [text]="true"
+            size="small" (onClick)="removeInterface(i)" />
+        </div>
+        @if (!iface.linkName) {
+          <small class="iface-hint">
+            <i class="pi pi-info-circle"></i>
+            <span>{{ 'form.no-link-hint' | translate }}</span>
+          </small>
+        }
+      }
+    </div>
+
+    <p-button [label]="'btn.add-interface' | translate" icon="pi pi-plus"
+      severity="secondary" [text]="true" size="small"
+      (onClick)="addInterface()" />
+
+    <p-divider><span class="divider-label">{{ 'form.shared-folders' | translate }}</span></p-divider>
+
+    @if (editNode?.containerId) {
+      <small class="field-hint field-hint--warn">
+        <i class="pi pi-exclamation-triangle"></i>
+        <span>{{ 'form.mounted-hint' | translate }}</span>
+      </small>
+    }
+
+    <div class="mounts-list">
+      @for (mount of mounts; track $index; let i = $index) {
+        <div class="mount-row">
+          <input pInputText [(ngModel)]="mount.hostPath" placeholder="/percorso/host"
+            class="mount-row__host" readonly />
+          <span class="mount-arrow">→</span>
+          <input pInputText [(ngModel)]="mount.containerPath" placeholder="/app"
+            class="mount-row__container" />
+          <p-button icon="pi pi-folder-open" [text]="true" size="small"
+            [pTooltip]="'btn.change-folder' | translate" (onClick)="browseHostPath(i)" />
+          <p-button icon="pi pi-times" severity="danger" [text]="true" size="small"
+            (onClick)="removeMount(i)" />
+        </div>
+      }
+    </div>
+
+    <p-button [label]="'btn.add-folder' | translate" icon="pi pi-folder-open"
+      severity="secondary" [text]="true" size="small"
+      (onClick)="addMount()" />
+
+  </div>
+
+  <ng-template #footer>
+    <p-button [label]="'btn.cancel' | translate" severity="secondary" (onClick)="visibleChange.emit(false)" />
+    <p-button
+      [label]="editNode ? ('btn.save' | translate) : ('btn.create-node' | translate)"
+      [icon]="editNode ? 'pi pi-check' : 'pi pi-plus'"
+      (onClick)="submit()"
+      [disabled]="!isValid()" />
+  </ng-template>
+</p-dialog>
