@@ -75,17 +75,7 @@ app.on('before-quit', (event) => {
   event.preventDefault();
   isQuitting = true;
 
-  const runningNodes = NodeService.list().filter(n => n.status === 'running');
-  const captureAll = runningNodes.map(async (n) => {
-    const linked = n.interfaces.filter(i => i.linkName).map(i => i.name);
-    if (linked.length === 0) return;
-    const savedIPs = await NetworkService.captureIPs(n.id, linked);
-    NodeService.saveIPs(n.id, savedIPs);
-  });
-
-  Promise.all(captureAll)
-    .catch(e => logger.warn('Salvataggio IP alla chiusura:', e))
-    .then(() => NodeService.stopAllRunning())
+  NodeService.stopAllRunning()
     .catch(e => logger.warn('Cleanup alla chiusura:', e))
     .finally(() => app.quit());
 });

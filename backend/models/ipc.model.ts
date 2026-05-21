@@ -33,7 +33,7 @@ export const IPC_CHANNELS = {
   // Dialog
   DIALOG_OPEN_FOLDER: 'dialog:open-folder',
 
-  // Docker / app lifecycle
+  // Docker
   DOCKER_CHECK:       'docker:check',
   DOCKER_UNAVAILABLE: 'docker:unavailable',
   DATA_READY:         'data:ready',

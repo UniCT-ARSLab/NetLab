@@ -136,11 +136,6 @@ export function registerIpcHandlers(_win: BrowserWindow): void {
             try { await NetworkService.flushInterface(node.id, iface.name); } catch { /* ignore */ }
           }
         }
-        for (const [ifaceName, addresses] of Object.entries(node.savedIPs ?? {})) {
-          for (const address of addresses) {
-            try { await NetworkService.addAddress(node.id, ifaceName, address); } catch { /* ignore */ }
-          }
-        }
       }
 
       return node;
@@ -152,14 +147,6 @@ export function registerIpcHandlers(_win: BrowserWindow): void {
   ipcMain.handle(IPC_CHANNELS.NODE_STOP, async (_e, id: string) => {
     try {
       TerminalService.notifyStopping(`term_${id}`);
-      const node = NodeService.get(id);
-      if (node?.status === 'running') {
-        const linked = node.interfaces.filter(i => i.linkName).map(i => i.name);
-        if (linked.length > 0) {
-          const savedIPs = await NetworkService.captureIPs(id, linked);
-          NodeService.saveIPs(id, savedIPs);
-        }
-      }
       const result = await NodeService.stop(id);
       TerminalService.close(`term_${id}`);
       return result;

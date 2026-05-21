@@ -209,11 +209,6 @@ export const NodeService = {
     persist();
   },
 
-  saveIPs(id: string, savedIPs: Record<string, string[]>): void {
-    const node = nodes.get(id);
-    if (node) { node.savedIPs = savedIPs; nodes.set(id, node); persist(); }
-  },
-
   updateStatus(id: string, status: NodeStatus): void {
     const node = nodes.get(id);
     if (node) {

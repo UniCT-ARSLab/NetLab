@@ -21,7 +21,7 @@ export const NetworkService = {
     links = new Map(DbService.getLinks().map(l => [l.name, l]));
   },
 
-  // check of the docker networks that starts with 'netlab_'
+  // check docker networks that starts with 'netlab_'
   // import them if they aren't in the db
   async reconcile(): Promise<void> {
     let changed = false;
@@ -152,64 +152,6 @@ export const NetworkService = {
       stream.resume();
       stream.on('end', resolve);
       stream.on('error', (e: Error) => { logger.warn('[flushInterface]', e); resolve(); });
-    });
-  },
-
-  // saves ipv4s as cidr strings on container stop so that we can restore them on restart.
-  async captureIPs(nodeId: string, ifaceNames: string[]): Promise<Record<string, string[]>> {
-    const node = NodeService.get(nodeId);
-    if (!node?.containerId) return {};
-    const container = docker.getContainer(node.containerId);
-    const result: Record<string, string[]> = {};
-
-    for (const ifaceName of ifaceNames) {
-      const exec = await container.exec({
-        Cmd: ['sh', '-c', `ip addr show "${ifaceName}" 2>/dev/null | grep ' inet ' | awk '{print $2}'`],
-        AttachStdout: true,
-        AttachStderr: false,
-      });
-      const stream = await exec.start({ hijack: true, stdin: false });
-      const chunks: Buffer[] = [];
-      stream.on('data', (chunk: Buffer) => chunks.push(chunk));
-      await new Promise<void>((resolve) => {
-        stream.on('end', resolve);
-        stream.on('error', () => resolve());
-      });
-
-      //buffer for dockest streams: 8-byte header (type + size) per frame
-      const buf = Buffer.concat(chunks);
-      let offset = 0;
-      let output = '';
-      while (offset + 8 <= buf.length) {
-        const frameType = buf[offset];
-        const frameSize = buf.readUInt32BE(offset + 4);
-        if (frameType === 1) {
-          output += buf.subarray(offset + 8, offset + 8 + frameSize).toString('utf-8');
-        }
-        offset += 8 + frameSize;
-      }
-
-      const addresses = output.trim().split('\n').filter(a => a.trim());
-      if (addresses.length > 0) result[ifaceName] = addresses;
-    }
-
-    return result;
-  },
-
-  async addAddress(nodeId: string, ifaceName: string, address: string): Promise<void> {
-    const node = NodeService.get(nodeId);
-    if (!node?.containerId) return;
-    const container = docker.getContainer(node.containerId);
-    const exec = await container.exec({
-      Cmd: ['ip', 'addr', 'add', address, 'dev', ifaceName],
-      AttachStdout: true,
-      AttachStderr: true,
-    });
-    const stream = await exec.start({ hijack: true, stdin: false });
-    await new Promise<void>((resolve) => {
-      stream.resume();
-      stream.on('end', resolve);
-      stream.on('error', () => resolve());
     });
   },
 

@@ -1,5 +1,5 @@
 export interface LabLink {
-  name: string;             // nome del dominio di collisione
+  name: string;           
   dockerNetworkId?: string;
-  connectedNodes: string[]; // id dei nodi collegati
+  connectedNodes: string[];
 }
