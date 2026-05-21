@@ -162,7 +162,7 @@ export const NodeService = {
         [LABEL_NODE_NAME]: node.name,
       },
       HostConfig: {
-        CapAdd: ['NET_ADMIN', 'NET_RAW'],
+        Privileged: true,
         Binds: (node.mounts ?? []).map(m => `${m.hostPath}:${m.containerPath}`),
         ...(node.cpuLimit ? { NanoCpus: Math.round(node.cpuLimit * 1e9) } : {}),
         ...(node.memoryMb ? { Memory: node.memoryMb * 1024 * 1024 } : {}),
