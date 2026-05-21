@@ -52,8 +52,8 @@ export const NodeService = {
       nodes.set(id, node);
     }
 
-    // Step 2: import containers that carry the netlab label but are not in the DB
-    // (happens when the user data directory is wiped while Docker containers remain)
+    //import containers that carry the netlab label but are not in the DB
+    //happens when the user data directory is wiped while Docker containers remain
     const knownIds  = new Set(Array.from(nodes.values()).map(n => n.containerId).filter(Boolean));
     const knownNames = new Set(Array.from(nodes.values()).map(n => n.name));
 

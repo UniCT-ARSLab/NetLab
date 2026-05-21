@@ -91,8 +91,6 @@
   color: #e4e4e7;
 }
 
-/* ── App shell ─────────────────────────────────────────────────────── */
-
 .netlab-shell {
   display: flex;
   flex-direction: column;
@@ -126,7 +124,6 @@
   background: var(--p-surface-200);
 }
 
-/* ── Canvas placeholder ────────────────────────────────────────────── */
 
 .canvas-placeholder {
   display: flex;
@@ -142,7 +139,6 @@
   opacity: 0.2;
 }
 
-/* ── Node detail card ──────────────────────────────────────────────── */
 
 .node-detail {
   background: var(--p-surface-0);
@@ -228,7 +224,6 @@
   color: var(--p-primary-color);
 }
 
-/* ── Link dialog ───────────────────────────────────────────────────── */
 
 .link-dialog-body {
   display: flex;
