@@ -68,15 +68,15 @@ export const NetworkService = {
     const network = await docker.createNetwork({
       Name: `netlab_${name}`,
       Driver: 'bridge',
-      // traffic on the same bridge must pass through iptables on Linux 
-      // we cannot use Internal=true adds stricter rules that
-      // can silently drop packets with non-Docker-assigned source IPs.
       Options: {
         'com.docker.network.bridge.enable_icc': 'true',
         'com.docker.network.bridge.enable_ip_masquerade': 'false',
       },
       IPAM: { Driver: 'default', Config: [] },
     });
+    // traffic on the same bridge must pass through iptables on Linux 
+    // we cannot use Internal=true adds stricter rules that
+    // can silently drop packets with non-Docker-assigned source IPs.
 
     const link: LabLink = { name, dockerNetworkId: network.id, connectedNodes: [] };
     links.set(name, link);
@@ -84,9 +84,8 @@ export const NetworkService = {
     return link;
   },
 
-  // Attaches a running container's interface to a Docker network and renames it.
+  // Attaches a running container's interface to a Docker network and renames it
   // it is ok to call even if the container is already connected
-
   async attachInterface(nodeId: string, ifaceName: string, linkName: string): Promise<void> {
     const node = NodeService.get(nodeId);
     if (!node || !node.containerId) throw new Error(`Nodo ${nodeId} non avviato`);
