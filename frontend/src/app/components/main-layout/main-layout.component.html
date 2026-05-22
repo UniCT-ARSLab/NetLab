@@ -49,54 +49,86 @@
     </aside>
 
     <main class="netlab-canvas">
-      @if (!selectedNode()) {
-        <div class="canvas-placeholder">
-          <i class="pi pi-sitemap canvas-placeholder__icon"></i>
-          <span>{{ 'nodes.select' | translate }}</span>
-        </div>
-      } @else {
-        <div class="node-detail">
-          <div class="node-detail__header">
-            <i class="pi pi-server node-detail__server-icon"></i>
-            <h2 class="node-detail__name">{{ selectedNode()!.name }}</h2>
-            <p-tag
-              [value]="selectedNode()!.status"
-              [severity]="statusSeverity(selectedNode()!.status)"
-              [rounded]="true" />
-          </div>
+      <div class="canvas-panels" [class.detail-open]="!!selectedNode()">
 
-          <div class="node-detail__meta">
-            <span class="meta-item">
-              <i class="pi pi-box"></i>{{ selectedNode()!.image || '—' }}
-            </span>
-            @if (selectedNode()!.cpuLimit) {
-              <span class="meta-item">
-                <i class="pi pi-microchip"></i>{{ selectedNode()!.cpuLimit }} core
-              </span>
-            }
-            @if (selectedNode()!.memoryMb) {
-              <span class="meta-item">
-                <i class="pi pi-gauge"></i>{{ selectedNode()!.memoryMb }} MB
-              </span>
-            }
-          </div>
-
-          @if (selectedNode()!.interfaces.length > 0) {
-            <div class="node-detail__interfaces">
-              <span class="node-detail__section-label">{{ 'node.interfaces' | translate }}</span>
-              @for (iface of selectedNode()!.interfaces; track $index) {
-                <div class="iface-row">
-                  <i class="pi pi-share-alt"></i>
-                  <span class="iface-row__name">{{ iface.name }}</span>
-                  @if (iface.linkName) {
-                    <span class="iface-row__link">→ {{ iface.linkName }}</span>
-                  }
-                </div>
-              }
+        <!-- Topology panel (always mounted to preserve pan/zoom state) -->
+        <div class="canvas-topology">
+          @if (nodes().length > 0) {
+            <app-topology-view
+              [nodes]="nodes()"
+              [links]="links()"
+              [selectedNodeId]="selectedNodeId()"
+              (nodeSelected)="onNodeSelected($event)"
+              (deselected)="selectedNodeId.set(null)" />
+          } @else {
+            <div class="canvas-center">
+              <div class="canvas-placeholder">
+                <i class="pi pi-sitemap canvas-placeholder__icon"></i>
+                <span>{{ 'nodes.select' | translate }}</span>
+              </div>
             </div>
           }
         </div>
-      }
+
+        <!-- Detail panel -->
+        <div class="canvas-card">
+          <div class="card-nav">
+            <button class="card-nav__back" (click)="selectedNodeId.set(null)">
+              <i class="pi pi-arrow-left"></i>
+              {{ 'topo.back' | translate }}
+            </button>
+            <i class="pi pi-angle-right card-nav__sep"></i>
+            <span class="card-nav__current">{{ selectedNode()?.name }}</span>
+          </div>
+
+          @if (selectedNode()) {
+            <div class="card-content">
+              <div class="node-detail">
+                <div class="node-detail__header">
+                  <i class="pi pi-server node-detail__server-icon"></i>
+                  <h2 class="node-detail__name">{{ selectedNode()!.name }}</h2>
+                  <p-tag
+                    [value]="selectedNode()!.status"
+                    [severity]="statusSeverity(selectedNode()!.status)"
+                    [rounded]="true" />
+                </div>
+
+                <div class="node-detail__meta">
+                  <span class="meta-item">
+                    <i class="pi pi-box"></i>{{ selectedNode()!.image || '—' }}
+                  </span>
+                  @if (selectedNode()!.cpuLimit) {
+                    <span class="meta-item">
+                      <i class="pi pi-microchip"></i>{{ selectedNode()!.cpuLimit }} core
+                    </span>
+                  }
+                  @if (selectedNode()!.memoryMb) {
+                    <span class="meta-item">
+                      <i class="pi pi-gauge"></i>{{ selectedNode()!.memoryMb }} MB
+                    </span>
+                  }
+                </div>
+
+                @if (selectedNode()!.interfaces.length > 0) {
+                  <div class="node-detail__interfaces">
+                    <span class="node-detail__section-label">{{ 'node.interfaces' | translate }}</span>
+                    @for (iface of selectedNode()!.interfaces; track $index) {
+                      <div class="iface-row">
+                        <i class="pi pi-share-alt"></i>
+                        <span class="iface-row__name">{{ iface.name }}</span>
+                        @if (iface.linkName) {
+                          <span class="iface-row__link">→ {{ iface.linkName }}</span>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+      </div>
     </main>
 
   </div>

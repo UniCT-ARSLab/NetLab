@@ -64,6 +64,8 @@ export const it: Record<string, string> = {
   'terminal.session-ended': '[sessione terminata]',
   'terminal.stopping':      'Arresto in corso…',
 
+  'topo.back': 'Topologia',
+
   'error.title': 'Errore',
 
 };

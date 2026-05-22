@@ -1,0 +1,87 @@
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.topo-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: grab;
+}
+
+.topo-svg--dragging {
+  cursor: grabbing;
+}
+
+/* ── Edges ───────────────────────────────────────────── */
+.topo-edge {
+  stroke: #52525b;
+  stroke-width: 2;
+  stroke-dasharray: 6 4;
+}
+
+.topo-edge-label-bg {
+  fill: #09090b;
+}
+
+.topo-edge-label {
+  fill: #71717a;
+  font-size: 11px;
+  font-family: 'Fira Mono', 'Consolas', monospace;
+  text-anchor: middle;
+}
+
+/* ── Nodes ───────────────────────────────────────────── */
+.topo-node {
+  cursor: pointer;
+}
+
+.topo-node__bg {
+  fill: #18181b;
+  stroke: #3f3f46;
+  stroke-width: 1.5;
+  transition: stroke 0.15s, fill 0.15s;
+}
+
+.topo-node:hover .topo-node__bg {
+  fill: #27272a;
+  stroke: #52525b;
+}
+
+.topo-node--selected .topo-node__bg {
+  stroke: #10b981;
+  stroke-width: 2;
+}
+
+.topo-node--running .topo-node__bg {
+  fill: #052e16;
+  stroke: #10b981;
+}
+
+.topo-node__name {
+  fill: #fafafa;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'Inter', -apple-system, sans-serif;
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+.topo-node__image {
+  fill: #71717a;
+  font-size: 10px;
+  font-family: 'Fira Mono', 'Consolas', monospace;
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+/* ── Status dot ──────────────────────────────────────── */
+.topo-node__dot {
+  pointer-events: none;
+}
+
+.topo-node__dot--running { fill: #10b981; }
+.topo-node__dot--stopped { fill: #52525b; }
+.topo-node__dot--created { fill: #3f3f46; }

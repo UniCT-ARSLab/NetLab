@@ -1,0 +1,64 @@
+<svg
+  class="topo-svg"
+  [class.topo-svg--dragging]="isDragging"
+  xmlns="http://www.w3.org/2000/svg"
+  (mousedown)="onSvgMouseDown($event)"
+  (click)="onSvgClick()">
+
+  <g [attr.transform]="canvasTransform">
+
+    <!-- Edges (behind nodes) -->
+    @for (edge of edges; track edge.linkName) {
+      <line
+        class="topo-edge"
+        [attr.x1]="edge.x1" [attr.y1]="edge.y1"
+        [attr.x2]="edge.x2" [attr.y2]="edge.y2" />
+      <rect
+        class="topo-edge-label-bg"
+        [attr.x]="edgeMid(edge).x - 28" [attr.y]="edgeMid(edge).y - 9"
+        width="56" height="16" rx="3" />
+      <text
+        class="topo-edge-label"
+        [attr.x]="edgeMid(edge).x" [attr.y]="edgeMid(edge).y + 4">
+        {{ edge.linkName }}
+      </text>
+    }
+
+    <!-- Nodes -->
+    @for (node of nodePositions; track node.id) {
+      <g
+        class="topo-node"
+        [class.topo-node--selected]="selectedNodeId === node.id"
+        [class.topo-node--running]="node.status === 'running'"
+        (mousedown)="onNodeMouseDown(node, $event)"
+        (click)="onNodeClick(node, $event)">
+
+        <rect
+          class="topo-node__bg"
+          [attr.x]="node.px" [attr.y]="node.py"
+          [attr.width]="NODE_W" [attr.height]="NODE_H"
+          rx="8" />
+
+        <circle
+          class="topo-node__dot"
+          [class.topo-node__dot--running]="node.status === 'running'"
+          [class.topo-node__dot--stopped]="node.status === 'stopped'"
+          [class.topo-node__dot--created]="node.status === 'created'"
+          [attr.cx]="node.px + NODE_W - 14" [attr.cy]="node.py + 14" r="5" />
+
+        <text
+          class="topo-node__name"
+          [attr.x]="node.px + NODE_W / 2" [attr.y]="node.py + 24">
+          {{ node.name }}
+        </text>
+
+        <text
+          class="topo-node__image"
+          [attr.x]="node.px + NODE_W / 2" [attr.y]="node.py + 40">
+          {{ node.image }}
+        </text>
+      </g>
+    }
+
+  </g>
+</svg>

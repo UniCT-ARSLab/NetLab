@@ -28,16 +28,17 @@ export const TerminalService = {
 
     const env: Record<string, string | undefined> = { ...process.env, TERM: 'xterm-256color' };
 
-    // macOs fixes for pty
+    // Use bash if available, fall back to sh (e.g. alpine only has sh)
+    const shellCmd = `command -v bash > /dev/null 2>&1 && exec bash || exec sh`;
     let term: pty.IPty;
     if (process.platform === 'darwin') {
       term = pty.spawn(
         '/bin/bash',
-        ['-l', '-c', `exec docker exec -it ${node.containerId} bash`],
+        ['-l', '-c', `exec docker exec -it ${node.containerId} sh -c '${shellCmd}'`],
         { name: 'xterm-256color', cols, rows, env },
       );
     } else {
-      term = pty.spawn('docker', ['exec', '-it', node.containerId, 'bash'], {
+      term = pty.spawn('docker', ['exec', '-it', node.containerId, 'sh', '-c', shellCmd], {
         name: 'xterm-256color', cols, rows, env,
       });
     }

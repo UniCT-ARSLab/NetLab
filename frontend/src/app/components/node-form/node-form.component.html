@@ -59,7 +59,7 @@
         <div class="iface-row">
           <input pInputText [(ngModel)]="iface.name" class="iface-row__name" />
           <p-select [(ngModel)]="iface.linkName" [options]="linkOptions()"
-            optionLabel="label" optionValue="value"
+            optionLabel="label" optionValue="value" optionDisabled="disabled"
             [placeholder]="'form.no-link-option' | translate" class="iface-row__link" />
           <p-button icon="pi pi-times" severity="danger" [text]="true"
             size="small" (onClick)="removeInterface(i)" />

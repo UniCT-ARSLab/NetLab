@@ -57,7 +57,7 @@ export const NetworkService = {
     return Array.from(links.values()).map(link => ({
       ...link,
       connectedNodes: allNodes
-        .filter(n => n.status === 'running' && n.interfaces.some(i => i.linkName === link.name))
+        .filter(n => n.interfaces.some(i => i.linkName === link.name))
         .map(n => n.id),
     }));
   },
@@ -95,11 +95,14 @@ export const NetworkService = {
 
     const network = docker.getNetwork(link.dockerNetworkId);
 
-    //check if already connected
     const netInfo = await network.inspect();
     const alreadyConnected = !!(netInfo.Containers?.[node.containerId]);
 
     if (!alreadyConnected) {
+      const othersConnected = Object.keys(netInfo.Containers ?? {}).length;
+      if (othersConnected >= 2) {
+        throw new Error(`Link "${linkName}" is already at capacity (max 2 nodes)`);
+      }
       await network.connect({ Container: node.containerId });
     }
 

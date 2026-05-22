@@ -15,6 +15,19 @@ function persist(): void {
   DbService.persistNodes(Array.from(nodes.values()));
 }
 
+async function ensureImagePresent(image: string): Promise<void> {
+  try {
+    await docker.getImage(image).inspect();
+  } catch {
+    await new Promise<void>((resolve, reject) => {
+      docker.pull(image, (err: Error | null, stream: NodeJS.ReadableStream) => {
+        if (err) return reject(err);
+        docker.modem.followProgress(stream, (err2: Error | null) => err2 ? reject(err2) : resolve());
+      });
+    });
+  }
+}
+
 export const NodeService = {
 
   init(): void {
@@ -150,6 +163,8 @@ export const NodeService = {
         node.containerId = undefined;
       }
     }
+
+    await ensureImagePresent(node.image);
 
     const container = await docker.createContainer({
       name: node.name,

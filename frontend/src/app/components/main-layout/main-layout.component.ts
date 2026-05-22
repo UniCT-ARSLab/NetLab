@@ -14,6 +14,7 @@ import { TranslateService, TranslatePipe } from '@ngx-translate/core';
 import { ToolbarComponent } from '../toolbar/toolbar.component';
 import { NodeListComponent } from '../node-list/node-list.component';
 import { NodeFormComponent } from '../node-form/node-form.component';
+import { TopologyViewComponent } from '../topology-view/topology-view.component';
 import { LabNode, NodeStatus } from '../../../../../backend/models/node.model';
 import { LabLink } from '../../../../../backend/models/link.model';
 import { NetworkService } from '../../services/network.service';
@@ -24,7 +25,7 @@ import { NodeService } from '../../services/node.service';
   standalone: true,
   imports: [
     CommonModule, FormsModule,
-    ToolbarComponent, NodeListComponent, NodeFormComponent,
+    ToolbarComponent, NodeListComponent, NodeFormComponent, TopologyViewComponent,
     Toast, Dialog, ConfirmDialog, Button, InputText, Divider, Tag,
     TranslatePipe,
   ],
@@ -46,12 +47,12 @@ export class MainLayoutComponent implements OnInit {
 
   dockerStatus = signal<'checking' | 'ok' | 'unavailable'>('checking');
 
-  private allNodes = toSignal(this.nodeService.nodes$, { initialValue: [] as LabNode[] });
+  nodes = toSignal(this.nodeService.nodes$, { initialValue: [] as LabNode[] });
   links = toSignal(this.networkService.links$, { initialValue: [] as LabLink[] });
 
   selectedNodeId = signal<string | null>(null);
   selectedNode = computed(() =>
-    this.allNodes().find((n) => n.id === this.selectedNodeId()) ?? null
+    this.nodes().find((n) => n.id === this.selectedNodeId()) ?? null
   );
 
   loadingNodeIds = signal(new Set<string>());

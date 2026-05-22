@@ -118,12 +118,111 @@
 .netlab-canvas {
   flex: 1;
   overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  position: relative;
   background: var(--p-surface-200);
 }
 
+/* ── Panel transition ────────────────────────────────── */
+.canvas-panels {
+  position: absolute;
+  inset: 0;
+}
+
+.canvas-topology {
+  position: absolute;
+  inset: 0;
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity    0.22s ease;
+}
+
+.canvas-panels.detail-open .canvas-topology {
+  transform: translateX(-40px);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.canvas-card {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(40px);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity    0.22s ease;
+}
+
+.canvas-panels.detail-open .canvas-card {
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* ── Back breadcrumb ─────────────────────────────────── */
+.card-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  border-bottom: 1px solid #3f3f46;
+  background: var(--p-surface-0);
+  flex-shrink: 0;
+}
+
+.card-nav__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: none;
+  border: none;
+  color: var(--p-primary-color);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+  border-radius: 5px;
+  transition: background 0.15s;
+  font-family: inherit;
+}
+
+.card-nav__back:hover {
+  background: color-mix(in srgb, var(--p-primary-color) 12%, transparent);
+}
+
+.card-nav__back .pi {
+  font-size: 0.75rem;
+}
+
+.card-nav__sep {
+  color: #52525b;
+  font-size: 0.8rem;
+}
+
+.card-nav__current {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #fafafa;
+}
+
+/* ── Card content area ───────────────────────────────── */
+.card-content {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 2rem;
+}
+
+/* ── Topology placeholder ────────────────────────────── */
+.canvas-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
 .canvas-placeholder {
   display: flex;

@@ -42,16 +42,30 @@ export class NodeFormComponent implements OnChanges {
   private cdr            = inject(ChangeDetectorRef);
 
   links = toSignal(this.networkService.links$, { initialValue: [] as LabLink[] });
+  private allNodes = toSignal(this.nodeService.nodes$, { initialValue: [] as LabNode[] });
 
-  linkOptions = computed(() => [
-    { label: this.translate.instant('form.no-link-option'), value: '' },
-    ...this.links().map((l) => ({ label: l.name, value: l.name })),
-  ]);
+  linkOptions = computed(() => {
+    // Count interface-to-link assignments from every node except the one being edited
+    const usage = new Map<string, number>();
+    for (const node of this.allNodes()) {
+      if (node.id === this.editNode?.id) continue;
+      for (const iface of node.interfaces) {
+        if (iface.linkName) usage.set(iface.linkName, (usage.get(iface.linkName) ?? 0) + 1);
+      }
+    }
+    return [
+      { label: this.translate.instant('form.no-link-option'), value: '', disabled: false },
+      ...this.links().map(l => ({
+        label: l.name,
+        value: l.name,
+        disabled: (usage.get(l.name) ?? 0) >= 2,
+      })),
+    ];
+  });
 
   readonly imageOptions = [
-    { label: 'kathara/base',   value: 'kathara/base' },
-    { label: 'kathara/quagga', value: 'kathara/quagga' },
-    { label: 'kathara/frr',    value: 'kathara/frr' },
+    { label: 'kathara/base', value: 'kathara/base' },
+    { label: 'alpine',       value: 'alpine' },
   ];
 
   name       = '';
