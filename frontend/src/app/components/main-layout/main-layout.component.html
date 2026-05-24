@@ -123,6 +123,54 @@
                     }
                   </div>
                 }
+
+                @if (selectedNode()!.status === 'running' && isElectron) {
+                  <div class="net-info">
+                    <div class="net-info__header">
+                      <span class="net-info__title">
+                        <i class="pi pi-sitemap"></i>
+                        {{ 'node.net-state' | translate }}
+                      </span>
+                      @if (netInfoTime()) {
+                        <span class="net-info__timestamp" [title]="'node.net-snapshot-hint' | translate">
+                          <i class="pi pi-clock"></i>
+                          {{ netInfoTime()! | date:'HH:mm:ss' }}
+                        </span>
+                      }
+                      <button
+                        class="net-info__refresh"
+                        [class.net-info__refresh--spinning]="netInfoLoading()"
+                        [disabled]="netInfoLoading()"
+                        (click)="fetchNetworkInfo()"
+                        [title]="'node.net-refresh' | translate">
+                        <i class="pi pi-refresh"></i>
+                      </button>
+                    </div>
+
+                    @if (netInfoLoading() && !networkInfo()) {
+                      <div class="net-info__loading">
+                        <i class="pi pi-spinner pi-spin"></i>
+                      </div>
+                    } @else if (netInfoError()) {
+                      <p class="net-info__error">{{ netInfoError() }}</p>
+                    } @else if (networkInfo()) {
+                      <div class="net-info__body">
+                        @if (networkInfo()!.addr) {
+                          <div class="net-info__section">
+                            <span class="net-info__sub">{{ 'node.net-addr' | translate }}</span>
+                            <pre class="net-info__code">{{ networkInfo()!.addr }}</pre>
+                          </div>
+                        }
+                        @if (networkInfo()!.routes) {
+                          <div class="net-info__section">
+                            <span class="net-info__sub">{{ 'node.net-routes' | translate }}</span>
+                            <pre class="net-info__code">{{ networkInfo()!.routes }}</pre>
+                          </div>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
               </div>
             </div>
           }

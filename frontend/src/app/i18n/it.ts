@@ -66,6 +66,12 @@ export const it: Record<string, string> = {
 
   'topo.back': 'Topologia',
 
+  'node.net-state':         'Stato rete',
+  'node.net-addr':          'Indirizzi',
+  'node.net-routes':        'Rotte',
+  'node.net-refresh':       'Aggiorna snapshot',
+  'node.net-snapshot-hint': 'Snapshot — i dati potrebbero non essere aggiornati',
+
   'error.title': 'Errore',
 
 };

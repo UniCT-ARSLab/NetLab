@@ -139,7 +139,7 @@ export const NodeService = {
     return node;
   },
 
-  async start(id: string): Promise<{ node: LabNode; isNewContainer: boolean }> {
+  async start(id: string): Promise<LabNode> {
     const node = nodes.get(id);
     if (!node) throw new Error(`Nodo ${id} non trovato`);
 
@@ -151,12 +151,12 @@ export const NodeService = {
         if (info.State.Running) {
           node.status = 'running';
           persist();
-          return { node, isNewContainer: false };
+          return node;
         }
         await existing.start();
         node.status = 'running';
         persist();
-        return { node, isNewContainer: false };
+        return node;
       } catch (e: any) {
         if (e?.statusCode !== 404) throw e;
         // deleted container, create a new one 
@@ -194,7 +194,7 @@ export const NodeService = {
     node.containerId = container.id;
     node.status = 'running';
     persist();
-    return { node, isNewContainer: true };
+    return node;
   },
 
   async stop(id: string): Promise<LabNode> {

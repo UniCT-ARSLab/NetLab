@@ -28,12 +28,18 @@ export const NetworkService = {
     const dockerNetworks = await docker.listNetworks();
     const netlabNets = dockerNetworks.filter(n => n.Name?.startsWith('netlab_'));
 
-    // Import orphaned Docker networks
+    // Import orphaned Docker networks; re-associate if ID changed (e.g. Docker Desktop restart)
     for (const net of netlabNets) {
       const linkName = net.Name!.slice('netlab_'.length);
       if (!links.has(linkName)) {
         links.set(linkName, { name: linkName, dockerNetworkId: net.Id, connectedNodes: [] });
         changed = true;
+      } else {
+        const existing = links.get(linkName)!;
+        if (existing.dockerNetworkId !== net.Id) {
+          existing.dockerNetworkId = net.Id;
+          changed = true;
+        }
       }
     }
 

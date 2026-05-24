@@ -4,8 +4,84 @@ import { IPC_CHANNELS, CreateNodeParams } from '../backend/models/ipc.model';
 import { NodeService } from '../backend/services/node.service';
 import { NetworkService } from '../backend/services/network.service';
 import { TerminalService } from '../backend/services/terminal.service';
-import { isDockerAvailable } from '../backend/services/docker.client';
+import { docker, isDockerAvailable } from '../backend/services/docker.client';
 import { logger } from './logger';
+
+// Docker exec streams are multiplexed: each frame has an 8-byte header
+// (1 byte type, 3 bytes padding, 4 bytes payload length) followed by the payload.
+function demuxDockerStream(stream: NodeJS.ReadableStream): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    stream.on('data', (c: Buffer) => chunks.push(Buffer.isBuffer(c) ? c : Buffer.from(c)));
+    stream.on('end', () => {
+      const raw = Buffer.concat(chunks);
+      let text = '';
+      let i = 0;
+      while (i + 8 <= raw.length) {
+        const size = raw.readUInt32BE(i + 4);
+        const end  = i + 8 + size;
+        if (end > raw.length) break;
+        text += raw.subarray(i + 8, end).toString('utf8');
+        i = end;
+      }
+      resolve(text);
+    });
+    stream.on('error', reject);
+  });
+}
+
+// Parse `ip addr` output (works on both full iproute2 and BusyBox).
+// Returns one line per non-loopback interface: "eth0      UP     10.0.1.50/24"
+function formatAddrSection(raw: string): string {
+  const entries: Array<{ name: string; state: string; ips: string[] }> = [];
+  let cur: { name: string; state: string; ips: string[] } | null = null;
+
+  for (const line of raw.split('\n')) {
+    // Interface header: "2: eth0@if5: <FLAGS> ... state UP ..."
+    const ifm = line.match(/^\d+:\s+([^:@\s]+)(?:@\S+)?:\s+<[^>]+>.*\bstate\s+(\S+)/);
+    if (ifm) {
+      if (cur) entries.push(cur);
+      cur = { name: ifm[1], state: ifm[2], ips: [] };
+      continue;
+    }
+    if (!cur) continue;
+    const v4 = line.match(/^\s+inet\s+(\S+)/);
+    if (v4) { cur.ips.push(v4[1]); continue; }
+    const v6 = line.match(/^\s+inet6\s+(\S+)/);
+    // skip loopback ::1 and link-local fe80::
+    if (v6 && !v6[1].startsWith('fe80') && v6[1] !== '::1/128') cur.ips.push(v6[1]);
+  }
+  if (cur) entries.push(cur);
+
+  const lines = entries
+    .filter(e => e.name !== 'lo')
+    .map(e => {
+      const state = e.state === 'UP' ? 'UP' : e.state === 'DOWN' ? 'DOWN' : '?';
+      const ips   = e.ips.length ? e.ips.join('  ') : 'no address';
+      return `${e.name.padEnd(12)}${state.padEnd(8)}${ips}`;
+    });
+  return lines.length ? lines.join('\n') : '—';
+}
+
+// Parse `ip route` output and strip kernel noise, presenting it concisely.
+// "10.0.1.0/24 dev eth0 proto kernel scope link src 10.0.1.50"
+//   → "10.0.1.0/24         → eth0  (direct)"
+// "default via 10.0.1.1 dev eth0" → "default             → 10.0.1.1  (eth0)"
+function formatRouteSection(raw: string): string {
+  const rows = raw.split('\n').filter(l => l.trim()).map(line => {
+    const p      = line.trim().split(/\s+/);
+    const dest   = p[0];
+    const viaIdx = p.indexOf('via');
+    const devIdx = p.indexOf('dev');
+    const gw  = viaIdx >= 0 ? p[viaIdx + 1] : undefined;
+    const dev = devIdx >= 0 ? p[devIdx + 1] : undefined;
+    const d   = dest.padEnd(20);
+    if (gw && dev) return `${d}→ ${gw}  (${dev})`;
+    if (dev)       return `${d}→ ${dev}  (direct)`;
+    return line.trim();
+  });
+  return rows.length ? rows.join('\n') : '—';
+}
 
 function toUserError(e: unknown): Error {
   const msg = (e instanceof Error ? e.message : String(e)).toLowerCase();
@@ -115,26 +191,21 @@ export function registerIpcHandlers(_win: BrowserWindow): void {
 
   ipcMain.handle(IPC_CHANNELS.NODE_START, async (_e, id: string) => {
     try {
-      const { node, isNewContainer } = await NodeService.start(id);
+      const node = await NodeService.start(id);
 
-      if (isNewContainer) {
-        for (const iface of node.interfaces) {
-          if (iface.linkName) {
-            try {
-              await NetworkService.attachInterface(node.id, iface.name, iface.linkName);
-            } catch (e) {
-              logger.error(`attachInterface failed for ${iface.name}→${iface.linkName}:`, e);
-              throw new Error(
-                `Impossibile collegare l'interfaccia "${iface.name}" al link "${iface.linkName}": ${e instanceof Error ? e.message : String(e)}`
-              );
-            }
-          }
-        }
-      } else {
-        for (const iface of node.interfaces) {
-          if (iface.linkName) {
-            try { await NetworkService.flushInterface(node.id, iface.name); } catch { /* ignore */ }
-          }
+      // Always attach interfaces — handles both first start and restarts where
+      // a link was added/changed since the container was created.
+      // attachInterface is idempotent (skips network.connect if already connected)
+      // and ends with an ip addr flush, so no separate flushInterface needed.
+      for (const iface of node.interfaces) {
+        if (!iface.linkName) continue;
+        try {
+          await NetworkService.attachInterface(node.id, iface.name, iface.linkName);
+        } catch (e) {
+          logger.error(`attachInterface failed for ${iface.name}→${iface.linkName}:`, e);
+          throw new Error(
+            `Impossibile collegare l'interfaccia "${iface.name}" al link "${iface.linkName}": ${e instanceof Error ? e.message : String(e)}`
+          );
         }
       }
 
@@ -164,7 +235,26 @@ export function registerIpcHandlers(_win: BrowserWindow): void {
     }
   });
 
-  // LINK 
+  ipcMain.handle(IPC_CHANNELS.NODE_NETWORK_INFO, async (_e, id: string) => {
+    try {
+      const node = NodeService.get(id);
+      if (!node?.containerId) throw new Error('Container not running');
+      const container = docker.getContainer(node.containerId);
+      const exec = await container.exec({
+        Cmd: ['sh', '-c', 'ip addr 2>/dev/null; echo "§§§"; ip route 2>/dev/null'],
+        AttachStdout: true,
+        AttachStderr: false,
+      });
+      const stream = await exec.start({ hijack: true, stdin: false });
+      const output = await demuxDockerStream(stream);
+      const [addrRaw = '', routeRaw = ''] = output.split('§§§');
+      return { addr: formatAddrSection(addrRaw), routes: formatRouteSection(routeRaw) };
+    } catch (e) {
+      throw toUserError(e);
+    }
+  });
+
+  // LINK
 
   ipcMain.handle(IPC_CHANNELS.LINK_LIST, async () => {
     return NetworkService.list();

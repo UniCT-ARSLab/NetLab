@@ -33,6 +33,9 @@ export const IPC_CHANNELS = {
   // Dialog
   DIALOG_OPEN_FOLDER: 'dialog:open-folder',
 
+  // Node info
+  NODE_NETWORK_INFO:  'node:network-info',
+
   // Docker
   DOCKER_CHECK:       'docker:check',
   DOCKER_UNAVAILABLE: 'docker:unavailable',

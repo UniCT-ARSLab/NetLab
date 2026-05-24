@@ -3,6 +3,7 @@ import type { CreateNodeParams } from '../backend/models/ipc.model';
 
 const CH = {
   NODE_LIST:            'node:list',
+  NODE_NETWORK_INFO:    'node:network-info',
   NODE_CREATE:          'node:create',
   NODE_START:           'node:start',
   NODE_STOP:            'node:stop',
@@ -53,6 +54,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   stopNode: (id: string) => ipcRenderer.invoke(CH.NODE_STOP, id),
   updateNode: (id: string, params: CreateNodeParams) => ipcRenderer.invoke(CH.NODE_UPDATE, id, params),
   deleteNode: (id: string) => ipcRenderer.invoke(CH.NODE_DELETE, id),
+  getNetworkInfo: (id: string) => ipcRenderer.invoke(CH.NODE_NETWORK_INFO, id),
 
   // LINK 
   listLinks: ()  => ipcRenderer.invoke(CH.LINK_LIST),

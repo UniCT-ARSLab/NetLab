@@ -15,4 +15,4 @@ e route (ip rooute) nella card (solo a container UP)
 1. Bug interfacce non presenti se assegnate ma non assegno link ma lo faccio successivamente. 
 es. router 6 e 7 connessi tramite link E su interfacce eth0, router 7 continua a non avere eth0 con ip a
 anche riavviando app non succede niente, prima avevo chiuso up non c'erano più i link collegati nella topologia 
-ma non ho testatose erano effettivamente collegate le macchine
+ma non ho testatose erano effettivamente collegate le macchine - FIXATO

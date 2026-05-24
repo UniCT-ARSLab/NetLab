@@ -324,6 +324,128 @@
 }
 
 
+/* ── Network info snapshot ───────────────────────────── */
+.net-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  background: #09090b;
+  border: 1px solid #27272a;
+  border-radius: 8px;
+}
+
+.net-info__header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.net-info__title {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: #52525b;
+}
+
+.net-info__timestamp {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.72rem;
+  font-family: 'Fira Mono', 'Consolas', monospace;
+  color: #3f3f46;
+}
+
+.net-info__timestamp .pi {
+  font-size: 0.65rem;
+}
+
+.net-info__refresh {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  background: none;
+  border: 1px solid #3f3f46;
+  border-radius: 4px;
+  color: #52525b;
+  cursor: pointer;
+  font-family: inherit;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.net-info__refresh:hover:not(:disabled) {
+  color: var(--p-primary-color);
+  border-color: var(--p-primary-color);
+  background: color-mix(in srgb, var(--p-primary-color) 10%, transparent);
+}
+
+.net-info__refresh:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.net-info__refresh--spinning .pi-refresh {
+  display: inline-block;
+  animation: net-spin 0.7s linear infinite;
+}
+
+@keyframes net-spin {
+  to { transform: rotate(360deg); }
+}
+
+.net-info__loading {
+  display: flex;
+  justify-content: center;
+  padding: 0.75rem 0;
+  color: #3f3f46;
+  font-size: 1rem;
+}
+
+.net-info__error {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #ef4444;
+}
+
+.net-info__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.net-info__section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.net-info__sub {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #3f3f46;
+}
+
+.net-info__code {
+  margin: 0;
+  font-family: 'Fira Mono', 'Consolas', monospace;
+  font-size: 0.76rem;
+  color: #71717a;
+  line-height: 1.65;
+  white-space: pre;
+  overflow-x: auto;
+}
+
 .link-dialog-body {
   display: flex;
   flex-direction: column;

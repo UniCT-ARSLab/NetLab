@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed, inject } from '@angular/core';
+import { Component, OnInit, signal, computed, inject, effect, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -20,6 +20,8 @@ import { LabLink } from '../../../../../backend/models/link.model';
 import { NetworkService } from '../../services/network.service';
 import { NodeService } from '../../services/node.service';
 
+interface NetworkInfo { addr: string; routes: string; }
+
 @Component({
   selector: 'app-main-layout',
   standalone: true,
@@ -33,6 +35,7 @@ import { NodeService } from '../../services/node.service';
   styleUrl: './main-layout.component.css',
   templateUrl: './main-layout.component.html',
 })
+
 export class MainLayoutComponent implements OnInit {
   private networkService      = inject(NetworkService);
   private nodeService         = inject(NodeService);
@@ -44,6 +47,29 @@ export class MainLayoutComponent implements OnInit {
   showEditDialog   = false;
   showLinkDialog   = false;
   newLinkName = '';
+
+  readonly isElectron = !!window.electronAPI;
+
+  networkInfo    = signal<NetworkInfo | null>(null);
+  netInfoLoading = signal(false);
+  netInfoTime    = signal<Date | null>(null);
+  netInfoError   = signal<string | null>(null);
+
+  constructor() {
+    // Clear snapshot and auto-fetch whenever the selected node changes
+    effect(() => {
+      const id = this.selectedNodeId();
+      untracked(() => {
+        this.networkInfo.set(null);
+        this.netInfoTime.set(null);
+        this.netInfoError.set(null);
+        if (id) {
+          const node = this.selectedNode();
+          if (node?.status === 'running') void this.fetchNetworkInfo();
+        }
+      });
+    });
+  }
 
   dockerStatus = signal<'checking' | 'ok' | 'unavailable'>('checking');
 
@@ -84,6 +110,22 @@ export class MainLayoutComponent implements OnInit {
       this.dockerStatus.set(ok ? 'ok' : 'unavailable');
       if (ok) this.loadData();
     });
+  }
+
+  async fetchNetworkInfo(): Promise<void> {
+    const node = this.selectedNode();
+    if (!node || node.status !== 'running' || !window.electronAPI) return;
+    this.netInfoLoading.set(true);
+    this.netInfoError.set(null);
+    try {
+      const info = await window.electronAPI.getNetworkInfo(node.id);
+      this.networkInfo.set(info);
+      this.netInfoTime.set(new Date());
+    } catch (e) {
+      this.netInfoError.set(e instanceof Error ? e.message : String(e));
+    } finally {
+      this.netInfoLoading.set(false);
+    }
   }
 
   private loadData(): void {

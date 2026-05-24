@@ -66,6 +66,12 @@ export const en: Record<string, string> = {
 
   'topo.back': 'Topology',
 
+  'node.net-state':         'Network state',
+  'node.net-addr':          'Addresses',
+  'node.net-routes':        'Routes',
+  'node.net-refresh':       'Refresh snapshot',
+  'node.net-snapshot-hint': 'Snapshot — data may be stale',
+
   'error.title': 'Error',
 
 };
