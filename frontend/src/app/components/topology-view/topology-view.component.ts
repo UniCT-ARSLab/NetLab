@@ -112,7 +112,7 @@ export class TopologyViewComponent implements AfterViewInit, OnDestroy {
     this.svgEl?.removeEventListener('wheel', this.wheelHandler);
   }
 
-  // ── Canvas pan ──────────────────────────────────────
+  //Canvas pan
 
   onSvgMouseDown(event: MouseEvent): void {
     if (event.button !== 0) return;
@@ -126,7 +126,7 @@ export class TopologyViewComponent implements AfterViewInit, OnDestroy {
     if (!this.hasDragged) this.deselected.emit();
   }
 
-  // ── Node drag + click ───────────────────────────────
+  //Node drag + click 
 
   onNodeMouseDown(node: NodePos, event: MouseEvent): void {
     event.stopPropagation(); // prevent canvas pan
@@ -146,7 +146,7 @@ export class TopologyViewComponent implements AfterViewInit, OnDestroy {
     this.nodeSelected.emit(node);
   }
 
-  // ── Shared document handlers ────────────────────────
+  //Shared document handlers 
 
   @HostListener('document:mousemove', ['$event'])
   onMouseMove(event: MouseEvent): void {

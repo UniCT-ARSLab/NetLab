@@ -39,6 +39,10 @@
   color: var(--p-text-muted-color);
 }
 
+:host ::ng-deep .p-divider.p-divider-horizontal {
+  margin: 0.25rem 0;
+}
+
 .interfaces-list {
   display: flex;
   flex-direction: column;

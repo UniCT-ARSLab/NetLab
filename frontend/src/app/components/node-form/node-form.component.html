@@ -4,7 +4,8 @@
   (onHide)="visibleChange.emit(false)"
   [header]="dialogHeader"
   [modal]="true"
-  [style]="{ width: '500px' }"
+  [style]="{ width: '580px' }"
+  [contentStyle]="{ 'max-height': '65vh', 'overflow-y': 'auto' }"
   [draggable]="false"
   [resizable]="false">
 
@@ -58,8 +59,9 @@
       @for (iface of interfaces; track $index; let i = $index) {
         <div class="iface-row">
           <input pInputText [(ngModel)]="iface.name" class="iface-row__name" />
-          <p-select [(ngModel)]="iface.linkName" [options]="linkOptions()"
-            optionLabel="label" optionValue="value" optionDisabled="disabled"
+          <p-select [(ngModel)]="iface.linkName" [options]="linkOptionsFor(iface)"
+            optionLabel="label" optionValue="value"
+            appendTo="body"
             [placeholder]="'form.no-link-option' | translate" class="iface-row__link" />
           <p-button icon="pi pi-times" severity="danger" [text]="true"
             size="small" (onClick)="removeInterface(i)" />

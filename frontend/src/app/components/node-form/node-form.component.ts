@@ -44,24 +44,23 @@ export class NodeFormComponent implements OnChanges {
   links = toSignal(this.networkService.links$, { initialValue: [] as LabLink[] });
   private allNodes = toSignal(this.nodeService.nodes$, { initialValue: [] as LabNode[] });
 
-  linkOptions = computed(() => {
-    // Count interface-to-link assignments from every node except the one being edited
+  // Per-interface options: full links are removed entirely,
+  // except when the link is already assigned to THIS interface (preserve current value).
+  linkOptionsFor(iface: InterfaceRow): Array<{ label: string; value: string }> {
     const usage = new Map<string, number>();
     for (const node of this.allNodes()) {
       if (node.id === this.editNode?.id) continue;
-      for (const iface of node.interfaces) {
-        if (iface.linkName) usage.set(iface.linkName, (usage.get(iface.linkName) ?? 0) + 1);
+      for (const i of node.interfaces) {
+        if (i.linkName) usage.set(i.linkName, (usage.get(i.linkName) ?? 0) + 1);
       }
     }
     return [
-      { label: this.translate.instant('form.no-link-option'), value: '', disabled: false },
-      ...this.links().map(l => ({
-        label: l.name,
-        value: l.name,
-        disabled: (usage.get(l.name) ?? 0) >= 2,
-      })),
+      { label: this.translate.instant('form.no-link-option'), value: '' },
+      ...this.links()
+        .filter(l => (usage.get(l.name) ?? 0) < 2 || l.name === iface.linkName)
+        .map(l => ({ label: l.name, value: l.name })),
     ];
-  });
+  }
 
   readonly imageOptions = [
     { label: 'kathara/base', value: 'kathara/base' },
