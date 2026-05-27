@@ -1,7 +1,7 @@
 import {
   Component, Input, Output, EventEmitter,
   HostListener, ElementRef, ChangeDetectorRef,
-  AfterViewInit, OnDestroy, inject,
+  AfterViewInit, OnChanges, OnDestroy, SimpleChanges, inject,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LabNode } from '../../../../../backend/models/node.model';
@@ -26,7 +26,7 @@ interface Edge { linkName: string; x1: number; y1: number; x2: number; y2: numbe
   templateUrl: './topology-view.component.html',
   styleUrl: './topology-view.component.css',
 })
-export class TopologyViewComponent implements AfterViewInit, OnDestroy {
+export class TopologyViewComponent implements OnChanges, AfterViewInit, OnDestroy {
   @Input() nodes: LabNode[] = [];
   @Input() links: LabLink[] = [];
   @Input() selectedNodeId: string | null = null;
@@ -51,11 +51,102 @@ export class TopologyViewComponent implements AfterViewInit, OnDestroy {
   private nodeDragOffset = { x: 0, y: 0 };
   private nodeOverrides  = new Map<string, { px: number; py: number }>();
 
+  private hasCentered = false;
   private svgEl!: SVGSVGElement;
   private wheelHandler!: (e: WheelEvent) => void;
 
   private el  = inject(ElementRef);
   private cdr = inject(ChangeDetectorRef);
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (this.svgEl && (changes['nodes'] || changes['links'])) this.centerView();
+  }
+
+  private centerView(): void {
+    if (this.hasCentered || !this.nodes.length) return;
+    const rect = this.svgEl.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    // Wait until links are loaded if any node references one
+    if (this.nodes.some(n => n.interfaces.some(i => i.linkName)) && !this.links.length) return;
+    this.computeLayout();
+    const pos = this.nodePositions;
+    const minX = Math.min(...pos.map(n => n.px));
+    const maxX = Math.max(...pos.map(n => n.px + NODE_W));
+    const minY = Math.min(...pos.map(n => n.py));
+    const maxY = Math.max(...pos.map(n => n.py + NODE_H));
+    this.panX = rect.width  / 2 - ((minX + maxX) / 2) * this.scale;
+    this.panY = rect.height / 2 - ((minY + maxY) / 2) * this.scale;
+    this.hasCentered = true;
+  }
+
+  private computeLayout(): void {
+    const n = this.nodes.length;
+    if (n < 2) return;
+
+    // Build adjacency (edge index pairs)
+    const adj: Set<number>[] = Array.from({ length: n }, () => new Set<number>());
+    for (const link of this.links) {
+      const idxs: number[] = [];
+      this.nodes.forEach((nd, i) => {
+        if (nd.interfaces.some(ifc => ifc.linkName === link.name)) idxs.push(i);
+      });
+      if (idxs.length >= 2) { adj[idxs[0]].add(idxs[1]); adj[idxs[1]].add(idxs[0]); }
+    }
+
+    // Circular seed positions (node centers relative to origin)
+    const k = NODE_W + 50;
+    const R = k * n / (2 * Math.PI);
+    const pos = Array.from({ length: n }, (_, i) => ({
+      x: R * Math.cos((2 * Math.PI * i) / n),
+      y: R * Math.sin((2 * Math.PI * i) / n),
+    }));
+
+    let temp = k * 2;
+    const dispX = new Float64Array(n);
+    const dispY = new Float64Array(n);
+
+    for (let iter = 0; iter < 300; iter++) {
+      dispX.fill(0); dispY.fill(0);
+
+      for (let i = 0; i < n; i++) {
+        for (let j = i + 1; j < n; j++) {
+          const dx = pos[i].x - pos[j].x, dy = pos[i].y - pos[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy) || 0.01;
+          const rep = k * k / dist;
+          dispX[i] += dx / dist * rep; dispY[i] += dy / dist * rep;
+          dispX[j] -= dx / dist * rep; dispY[j] -= dy / dist * rep;
+        }
+        // Weak gravity toward origin so disconnected nodes don't drift
+        dispX[i] -= pos[i].x * 0.008;
+        dispY[i] -= pos[i].y * 0.008;
+      }
+
+      for (let i = 0; i < n; i++) {
+        for (const j of adj[i]) {
+          if (j <= i) continue;
+          const dx = pos[i].x - pos[j].x, dy = pos[i].y - pos[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy) || 0.01;
+          const attr = dist * dist / k;
+          dispX[i] -= dx / dist * attr; dispY[i] -= dy / dist * attr;
+          dispX[j] += dx / dist * attr; dispY[j] += dy / dist * attr;
+        }
+      }
+
+      for (let i = 0; i < n; i++) {
+        const len = Math.sqrt(dispX[i] * dispX[i] + dispY[i] * dispY[i]) || 1;
+        pos[i].x += dispX[i] / len * Math.min(len, temp);
+        pos[i].y += dispY[i] / len * Math.min(len, temp);
+      }
+      temp *= 0.92;
+    }
+
+    for (let i = 0; i < n; i++) {
+      this.nodeOverrides.set(this.nodes[i].id, {
+        px: pos[i].x - NODE_W / 2,
+        py: pos[i].y - NODE_H / 2,
+      });
+    }
+  }
 
   get canvasTransform(): string {
     return `translate(${this.panX},${this.panY}) scale(${this.scale})`;
@@ -78,16 +169,27 @@ export class TopologyViewComponent implements AfterViewInit, OnDestroy {
       const connected = pos.filter(n => n.interfaces.some(i => i.linkName === link.name));
       if (connected.length < 2) return [];
       const [a, b] = connected;
-      return [{
-        linkName: link.name,
-        x1: a.px + NODE_W / 2, y1: a.py + NODE_H / 2,
-        x2: b.px + NODE_W / 2, y2: b.py + NODE_H / 2,
-      }];
+      const cx1 = a.px + NODE_W / 2, cy1 = a.py + NODE_H / 2;
+      const cx2 = b.px + NODE_W / 2, cy2 = b.py + NODE_H / 2;
+      const p1 = this.borderPt(cx1, cy1, cx2, cy2);
+      const p2 = this.borderPt(cx2, cy2, cx1, cy1);
+      return [{ linkName: link.name, x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y }];
     });
+  }
+
+  private borderPt(cx: number, cy: number, tx: number, ty: number): { x: number; y: number } {
+    const dx = tx - cx, dy = ty - cy;
+    if (!dx && !dy) return { x: cx, y: cy };
+    const s = Math.min(NODE_W / 2 / Math.abs(dx || 1e-9), NODE_H / 2 / Math.abs(dy || 1e-9));
+    return { x: cx + dx * s, y: cy + dy * s };
   }
 
   edgeMid(e: Edge): { x: number; y: number } {
     return { x: (e.x1 + e.x2) / 2, y: (e.y1 + e.y2) / 2 };
+  }
+
+  edgeLabelWidth(name: string): number {
+    return Math.max(40, name.length * 7 + 12);
   }
 
   ngAfterViewInit(): void {
@@ -106,6 +208,7 @@ export class TopologyViewComponent implements AfterViewInit, OnDestroy {
       this.cdr.detectChanges();
     };
     this.svgEl.addEventListener('wheel', this.wheelHandler, { passive: false });
+    this.centerView();
   }
 
   ngOnDestroy(): void {

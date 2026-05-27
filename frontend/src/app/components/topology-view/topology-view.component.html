@@ -15,8 +15,9 @@
         [attr.x2]="edge.x2" [attr.y2]="edge.y2" />
       <rect
         class="topo-edge-label-bg"
-        [attr.x]="edgeMid(edge).x - 28" [attr.y]="edgeMid(edge).y - 9"
-        width="56" height="16" rx="3" />
+        [attr.x]="edgeMid(edge).x - edgeLabelWidth(edge.linkName) / 2"
+        [attr.y]="edgeMid(edge).y - 9"
+        [attr.width]="edgeLabelWidth(edge.linkName)" height="16" rx="3" />
       <text
         class="topo-edge-label"
         [attr.x]="edgeMid(edge).x" [attr.y]="edgeMid(edge).y + 4">
