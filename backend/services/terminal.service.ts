@@ -50,7 +50,7 @@ export const TerminalService = {
     });
 
     term.onExit(() => {
-      sessions.delete(terminalId);
+      if (sessions.get(terminalId) === session) sessions.delete(terminalId);
       send(session, IPC_CHANNELS.TERMINAL_CLOSE, { terminalId });
     });
 

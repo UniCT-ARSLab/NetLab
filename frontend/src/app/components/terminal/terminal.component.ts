@@ -43,6 +43,7 @@ export class TerminalComponent implements AfterViewInit, OnDestroy {
     this.xterm = new Terminal({
       cursorBlink: true,
       fontSize: 14,
+      lineHeight: 1.2,
       fontFamily: '"Cascadia Code", "Fira Code", monospace',
       scrollOnUserInput: true,
       theme: {

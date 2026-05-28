@@ -51,7 +51,8 @@ export class TopologyViewComponent implements OnChanges, AfterViewInit, OnDestro
   private nodeDragOffset = { x: 0, y: 0 };
   private nodeOverrides  = new Map<string, { px: number; py: number }>();
 
-  private hasCentered = false;
+  private hasCentered    = false;
+  private hasManualDrag  = false;
   private svgEl!: SVGSVGElement;
   private wheelHandler!: (e: WheelEvent) => void;
 
@@ -59,7 +60,44 @@ export class TopologyViewComponent implements OnChanges, AfterViewInit, OnDestro
   private cdr = inject(ChangeDetectorRef);
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (this.svgEl && (changes['nodes'] || changes['links'])) this.centerView();
+    if (!this.svgEl) return;
+    if (!this.hasCentered) {
+      this.centerView();
+      return;
+    }
+    if (changes['links'] && !this.hasManualDrag) {
+      this.hasCentered = false;
+      this.nodeOverrides.clear();
+      this.centerView();
+    } else if (changes['nodes']) {
+      this.placeNewNodes();
+    }
+  }
+
+  private placeNewNodes(): void {
+    const placed = this.nodePositions.filter(p => this.nodeOverrides.has(p.id));
+    if (placed.length === 0) return;
+    const cx = placed.reduce((s, p) => s + p.px + NODE_W / 2, 0) / placed.length;
+    const cy = placed.reduce((s, p) => s + p.py + NODE_H / 2, 0) / placed.length;
+    let idx = 0;
+    for (const node of this.nodes) {
+      if (this.nodeOverrides.has(node.id)) continue;
+      const neighbor = placed.find(p =>
+        this.links.some(l =>
+          node.interfaces.some(i => i.linkName === l.name) &&
+          p.interfaces.some(i => i.linkName === l.name)
+        )
+      );
+      const angle = (2 * Math.PI * idx) / 8;
+      const r = NODE_W + 40;
+      const ox = neighbor ? neighbor.px + NODE_W / 2 : cx;
+      const oy = neighbor ? neighbor.py + NODE_H / 2 : cy;
+      this.nodeOverrides.set(node.id, {
+        px: ox + Math.cos(angle) * r - NODE_W / 2,
+        py: oy + Math.sin(angle) * r - NODE_H / 2,
+      });
+      idx++;
+    }
   }
 
   private centerView(): void {
@@ -74,8 +112,12 @@ export class TopologyViewComponent implements OnChanges, AfterViewInit, OnDestro
     const maxX = Math.max(...pos.map(n => n.px + NODE_W));
     const minY = Math.min(...pos.map(n => n.py));
     const maxY = Math.max(...pos.map(n => n.py + NODE_H));
-    this.panX = rect.width  / 2 - ((minX + maxX) / 2) * this.scale;
-    this.panY = rect.height / 2 - ((minY + maxY) / 2) * this.scale;
+    const PAD  = 60;
+    const fitX = (rect.width  - PAD * 2) / (maxX - minX);
+    const fitY = (rect.height - PAD * 2) / (maxY - minY);
+    this.scale = Math.max(MIN_ZOOM, Math.min(fitX, fitY, 0.75));
+    this.panX  = rect.width  / 2 - ((minX + maxX) / 2) * this.scale;
+    this.panY  = rect.height / 2 - ((minY + maxY) / 2) * this.scale;
     this.hasCentered = true;
   }
 
@@ -83,7 +125,6 @@ export class TopologyViewComponent implements OnChanges, AfterViewInit, OnDestro
     const n = this.nodes.length;
     if (n < 2) return;
 
-    // Build adjacency (edge index pairs)
     const adj: Set<number>[] = Array.from({ length: n }, () => new Set<number>());
     for (const link of this.links) {
       const idxs: number[] = [];
@@ -93,51 +134,53 @@ export class TopologyViewComponent implements OnChanges, AfterViewInit, OnDestro
       if (idxs.length >= 2) { adj[idxs[0]].add(idxs[1]); adj[idxs[1]].add(idxs[0]); }
     }
 
-    // Circular seed positions (node centers relative to origin)
-    const k = NODE_W + 50;
-    const R = k * n / (2 * Math.PI);
-    const pos = Array.from({ length: n }, (_, i) => ({
-      x: R * Math.cos((2 * Math.PI * i) / n),
-      y: R * Math.sin((2 * Math.PI * i) / n),
-    }));
+    const deg = Array.from({ length: n }, (_, i) => adj[i].size);
+    const root = deg.indexOf(Math.max(...deg));
+    const pos  = Array.from({ length: n }, () => ({ x: 0, y: 0 }));
+    const vis  = new Array(n).fill(false);
+    vis[root]  = true;
 
-    let temp = k * 2;
-    const dispX = new Float64Array(n);
-    const dispY = new Float64Array(n);
+    const STEP = NODE_W + 100;
 
-    for (let iter = 0; iter < 300; iter++) {
-      dispX.fill(0); dispY.fill(0);
+    interface Q { node: number; angle: number; spread: number; }
+    const queue: Q[] = [{ node: root, angle: -Math.PI / 2, spread: 2 * Math.PI }];
 
-      for (let i = 0; i < n; i++) {
-        for (let j = i + 1; j < n; j++) {
-          const dx = pos[i].x - pos[j].x, dy = pos[i].y - pos[j].y;
-          const dist = Math.sqrt(dx * dx + dy * dy) || 0.01;
-          const rep = k * k / dist;
-          dispX[i] += dx / dist * rep; dispY[i] += dy / dist * rep;
-          dispX[j] -= dx / dist * rep; dispY[j] -= dy / dist * rep;
-        }
-        // Weak gravity toward origin so disconnected nodes don't drift
-        dispX[i] -= pos[i].x * 0.008;
-        dispY[i] -= pos[i].y * 0.008;
+    while (queue.length) {
+      const { node, angle, spread } = queue.shift()!;
+      const children = [...adj[node]]
+        .filter(v => !vis[v])
+        .sort((a, b) => deg[b] - deg[a]);
+      if (!children.length) continue;
+
+      const step = STEP;
+      const childSpread = children.length === 1
+        ? 0
+        : Math.min(spread * 0.8, Math.PI * 0.9);
+      const half = (children.length - 1) / 2;
+
+      children.forEach((child, i) => {
+        vis[child] = true;
+        const a = angle + (children.length > 1 ? (i - half) / half * childSpread / 2 : 0);
+        pos[child] = { x: pos[node].x + Math.cos(a) * step, y: pos[node].y + Math.sin(a) * step };
+        queue.push({ node: child, angle: a, spread: Math.PI * 0.75 });
+      });
+    }
+
+    // Disconnected nodes: row below the cluster
+    let offX = 0;
+    for (let i = 0; i < n; i++) {
+      if (!vis[i]) {
+        pos[i] = { x: offX++ * (STEP + 10), y: STEP * 3 };
       }
+    }
 
-      for (let i = 0; i < n; i++) {
-        for (const j of adj[i]) {
-          if (j <= i) continue;
-          const dx = pos[i].x - pos[j].x, dy = pos[i].y - pos[j].y;
-          const dist = Math.sqrt(dx * dx + dy * dy) || 0.01;
-          const attr = dist * dist / k;
-          dispX[i] -= dx / dist * attr; dispY[i] -= dy / dist * attr;
-          dispX[j] += dx / dist * attr; dispY[j] += dy / dist * attr;
-        }
-      }
-
-      for (let i = 0; i < n; i++) {
-        const len = Math.sqrt(dispX[i] * dispX[i] + dispY[i] * dispY[i]) || 1;
-        pos[i].x += dispX[i] / len * Math.min(len, temp);
-        pos[i].y += dispY[i] / len * Math.min(len, temp);
-      }
-      temp *= 0.92;
+    // Rotate 90° clockwise if layout is taller than wide
+    const allX = pos.map(p => p.x);
+    const allY = pos.map(p => p.y);
+    const layoutW = (Math.max(...allX) - Math.min(...allX)) || 0.1;
+    const layoutH = (Math.max(...allY) - Math.min(...allY)) || 0.1;
+    if (layoutH > layoutW) {
+      for (const p of pos) { const t = p.x; p.x = -p.y; p.y = t; }
     }
 
     for (let i = 0; i < n; i++) {
@@ -275,6 +318,7 @@ export class TopologyViewComponent implements OnChanges, AfterViewInit, OnDestro
 
   @HostListener('document:mouseup')
   onMouseUp(): void {
+    if (this.draggingNodeId && this.nodeDragged) this.hasManualDrag = true;
     this.draggingNodeId = null;
     this.isDragging     = false;
   }
