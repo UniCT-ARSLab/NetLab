@@ -115,6 +115,7 @@ export const NodeService = {
       memoryMb: params.memoryMb,
       mounts: params.mounts ?? [],
       internetFacing: params.internetFacing ?? false,
+      wanIfaceName: params.wanIfaceName ?? 'eth_wan',
     };
     nodes.set(node.id, node);
     persist();
@@ -137,6 +138,9 @@ export const NodeService = {
     }
     if (params.internetFacing !== undefined) {
       node.internetFacing = params.internetFacing;
+    }
+    if (params.wanIfaceName !== undefined) {
+      node.wanIfaceName = params.wanIfaceName;
     }
     nodes.set(id, node);
     persist();

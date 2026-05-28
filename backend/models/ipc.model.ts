@@ -6,6 +6,7 @@ export interface CreateNodeParams {
   interfaces?: Array<{ name: string; linkName: string }>;
   mounts?: Array<{ hostPath: string; containerPath: string }>;
   internetFacing?: boolean;
+  wanIfaceName?: string;
 }
 
 export const IPC_CHANNELS = {

@@ -21,4 +21,5 @@ export interface LabNode {
   memoryMb?: number;  // RAM in MB (es. 256, 512, 1024)
   mounts?: Mount[];
   internetFacing?: boolean;
+  wanIfaceName?: string;
 }

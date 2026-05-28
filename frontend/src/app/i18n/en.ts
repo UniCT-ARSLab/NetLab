@@ -50,7 +50,8 @@ export const en: Record<string, string> = {
   'form.shared-folders': 'Shared folders',
   'form.mounted-hint': 'Folders are mounted at container creation. To apply changes, delete and recreate the node.',
   'form.connectivity':           'Connectivity',
-  'form.internet-facing-label':  'Internet access (eth_wan)',
+  'form.internet-facing-label':  'Internet access',
+  'form.wan-iface-label':        'WAN interface name',
   'form.internet-facing-hint':   'eth_wan gets an IP automatically (like an ISP uplink). You still configure: ip_forward, iptables MASQUERADE on eth_wan, and the default route on connected nodes.',
 
   'links.title': 'Manage Links',

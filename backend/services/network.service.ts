@@ -166,8 +166,8 @@ export const NetworkService = {
   // Creates a NAT-enabled WAN bridge for an internet-facing node and
   // attaches the container. The new interface inside the container is
   // identified by its MAC address (reported by Docker after connect)
-  // and renamed to "eth_wan" so the student knows where to route traffic.
-  async createWanBridge(nodeId: string): Promise<void> {
+  // and renamed to wanIfaceName so the student knows where to route traffic.
+  async createWanBridge(nodeId: string, wanIfaceName: string): Promise<void> {
     const node = NodeService.get(nodeId);
     if (!node?.containerId) throw new Error(`Nodo ${nodeId} non ha un container`);
 
@@ -204,6 +204,7 @@ export const NetworkService = {
     const exec = await container.exec({
       Cmd: ['sh', '-c', `
         mac="${mac}"
+        ifaceName="${wanIfaceName}"
         i=0
         while [ $i -lt 20 ]; do
           for f in /sys/class/net/eth*; do
@@ -212,8 +213,8 @@ export const NetworkService = {
             name=$(basename "$f")
             if [ "$cur" = "$mac" ]; then
               ip link set "$name" down
-              ip link set "$name" name eth_wan
-              ip link set eth_wan up
+              ip link set "$name" name "${ifaceName}"
+              ip link set "${ifaceName}" up
               exit 0
             fi
           done

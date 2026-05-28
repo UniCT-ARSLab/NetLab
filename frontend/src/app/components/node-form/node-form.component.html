@@ -115,6 +115,11 @@
       <label for="internetFacing">{{ 'form.internet-facing-label' | translate }}</label>
     </div>
     @if (internetFacing) {
+      <div class="field">
+        <label for="wanIfaceName">{{ 'form.wan-iface-label' | translate }}</label>
+        <input pInputText id="wanIfaceName" [(ngModel)]="wanIfaceName"
+          placeholder="eth_wan" [fluid]="true" />
+      </div>
       <small class="field-hint">
         <i class="pi pi-info-circle"></i>
         <span>{{ 'form.internet-facing-hint' | translate }}</span>

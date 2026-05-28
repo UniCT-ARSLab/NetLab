@@ -214,7 +214,7 @@ export function registerIpcHandlers(_win: BrowserWindow): void {
       // and routes manually — Docker only handles the NAT subnet setup.
       if (node.internetFacing) {
         try {
-          await NetworkService.createWanBridge(node.id);
+          await NetworkService.createWanBridge(node.id, node.wanIfaceName ?? 'eth_wan');
         } catch (e) {
           logger.error(`createWanBridge failed for ${node.name}:`, e);
           throw new Error(

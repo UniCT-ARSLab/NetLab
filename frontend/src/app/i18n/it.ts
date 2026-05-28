@@ -50,7 +50,8 @@ export const it: Record<string, string> = {
   'form.shared-folders':     'Cartelle condivise',
   'form.mounted-hint':       'Le cartelle sono montate alla creazione del container. Per applicare le modifiche, elimina e ricrea il nodo.',
   'form.connectivity':           'Connettività',
-  'form.internet-facing-label':  'Accesso a Internet (eth_wan)',
+  'form.internet-facing-label':  'Accesso a Internet',
+  'form.wan-iface-label':        'Nome interfaccia WAN',
   'form.internet-facing-hint':   "eth_wan riceve un IP automaticamente (come un uplink ISP). Configura manualmente: ip_forward, iptables MASQUERADE su eth_wan, e la rotta di default sui nodi collegati.",
 
   'links.title':          'Gestisci Link',
