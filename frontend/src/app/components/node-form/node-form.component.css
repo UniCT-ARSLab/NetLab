@@ -103,3 +103,15 @@
   flex: 1;
   min-width: 0;
 }
+
+.field-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.field-toggle label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+}

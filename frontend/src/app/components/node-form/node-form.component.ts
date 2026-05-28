@@ -10,6 +10,7 @@ import { Select } from 'primeng/select';
 import { InputText } from 'primeng/inputtext';
 import { InputNumber } from 'primeng/inputnumber';
 import { Divider } from 'primeng/divider';
+import { ToggleSwitch } from 'primeng/toggleswitch';
 import { MessageService } from 'primeng/api';
 import { TooltipModule } from 'primeng/tooltip';
 import { TranslateService, TranslatePipe } from '@ngx-translate/core';
@@ -24,7 +25,7 @@ interface MountRow     { hostPath: string; containerPath: string; }
 @Component({
   selector: 'app-node-form',
   standalone: true,
-  imports: [CommonModule, FormsModule, Dialog, Button, Select, InputText, InputNumber, Divider, TooltipModule, TranslatePipe],
+  imports: [CommonModule, FormsModule, Dialog, Button, Select, InputText, InputNumber, Divider, ToggleSwitch, TooltipModule, TranslatePipe],
   styleUrl: './node-form.component.css',
   templateUrl: './node-form.component.html',
 })
@@ -67,12 +68,13 @@ export class NodeFormComponent implements OnChanges {
     { label: 'alpine',       value: 'alpine' },
   ];
 
-  name       = '';
-  image      = 'kathara/base';
-  cpuLimit   = 1.0;
-  memoryMb   = 256;
+  name           = '';
+  image          = 'kathara/base';
+  cpuLimit       = 1.0;
+  memoryMb       = 256;
   interfaces: InterfaceRow[] = [];
   mounts: MountRow[] = [];
+  internetFacing = false;
 
   get dialogHeader(): string {
     return this.editNode
@@ -87,8 +89,9 @@ export class NodeFormComponent implements OnChanges {
         this.image      = this.editNode.image;
         this.cpuLimit   = this.editNode.cpuLimit  ?? 1.0;
         this.memoryMb   = this.editNode.memoryMb  ?? 256;
-        this.interfaces = this.editNode.interfaces.map((i) => ({ ...i }));
-        this.mounts     = (this.editNode.mounts ?? []).map((m) => ({ ...m }));
+        this.interfaces    = this.editNode.interfaces.map((i) => ({ ...i }));
+        this.mounts        = (this.editNode.mounts ?? []).map((m) => ({ ...m }));
+        this.internetFacing = this.editNode.internetFacing ?? false;
       } else {
         this.reset();
       }
@@ -139,8 +142,9 @@ export class NodeFormComponent implements OnChanges {
       image:      this.image,
       cpuLimit:   this.cpuLimit,
       memoryMb:   this.memoryMb,
-      interfaces: this.interfaces.filter((i) => i.name.trim()).map((i) => ({ name: i.name.trim(), linkName: i.linkName })),
-      mounts:     this.mounts.filter((m) => m.hostPath && m.containerPath),
+      interfaces:     this.interfaces.filter((i) => i.name.trim()).map((i) => ({ name: i.name.trim(), linkName: i.linkName })),
+      mounts:         this.mounts.filter((m) => m.hostPath && m.containerPath),
+      internetFacing: this.internetFacing,
     };
 
     if (this.editNode) {
@@ -164,5 +168,6 @@ export class NodeFormComponent implements OnChanges {
     this.name = ''; this.image = 'kathara/base';
     this.cpuLimit = 1.0; this.memoryMb = 256;
     this.interfaces = []; this.mounts = [];
+    this.internetFacing = false;
   }
 }

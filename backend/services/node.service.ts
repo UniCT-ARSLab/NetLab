@@ -114,6 +114,7 @@ export const NodeService = {
       cpuLimit: params.cpuLimit,
       memoryMb: params.memoryMb,
       mounts: params.mounts ?? [],
+      internetFacing: params.internetFacing ?? false,
     };
     nodes.set(node.id, node);
     persist();
@@ -133,6 +134,9 @@ export const NodeService = {
     }
     if (params.mounts !== undefined) {
       node.mounts = params.mounts;
+    }
+    if (params.internetFacing !== undefined) {
+      node.internetFacing = params.internetFacing;
     }
     nodes.set(id, node);
     persist();

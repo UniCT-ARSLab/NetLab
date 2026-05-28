@@ -49,6 +49,9 @@ export const it: Record<string, string> = {
   'form.no-link-hint':       "Senza un link assegnato l'interfaccia non sarà visibile nel container. Il link è il mezzo L2 (segmento di rete) per questa porta.",
   'form.shared-folders':     'Cartelle condivise',
   'form.mounted-hint':       'Le cartelle sono montate alla creazione del container. Per applicare le modifiche, elimina e ricrea il nodo.',
+  'form.connectivity':           'Connettività',
+  'form.internet-facing-label':  'Accesso a Internet (eth_wan)',
+  'form.internet-facing-hint':   "Docker creerà un bridge NAT con ip_masquerade abilitato. Dovrai configurare manualmente ip_forward, le regole iptables MASQUERADE e le rotte sui nodi collegati.",
 
   'links.title':          'Gestisci Link',
   'links.hint':           "Un link è un dominio di collisione (bridge Docker isolato). I nodi collegati allo stesso link comunicano a livello 2; gli IP sono configurati manualmente dall'interno del container.",

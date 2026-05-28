@@ -163,6 +163,89 @@ export const NetworkService = {
     });
   },
 
+  // Creates a NAT-enabled WAN bridge for an internet-facing node and
+  // attaches the container. The new interface inside the container is
+  // identified by its MAC address (reported by Docker after connect)
+  // and renamed to "eth_wan" so the student knows where to route traffic.
+  async createWanBridge(nodeId: string): Promise<void> {
+    const node = NodeService.get(nodeId);
+    if (!node?.containerId) throw new Error(`Nodo ${nodeId} non ha un container`);
+
+    const networkName = `netlab_wan_${nodeId}`;
+
+    // Clean up any leftover WAN network from a previous run
+    try {
+      const existing = await docker.listNetworks({ filters: { name: [networkName] } });
+      for (const net of existing) {
+        if (net.Name === networkName) {
+          try { await docker.getNetwork(net.Id).remove(); } catch { /* already gone */ }
+        }
+      }
+    } catch { /* ignore */ }
+
+    const network = await docker.createNetwork({
+      Name: networkName,
+      Driver: 'bridge',
+      Options: {
+        'com.docker.network.bridge.enable_icc': 'true',
+        'com.docker.network.bridge.enable_ip_masquerade': 'true',
+      },
+      IPAM: { Driver: 'default', Config: [] },
+    });
+
+    await network.connect({ Container: node.containerId });
+
+    // Docker reports the MAC address it assigned to the new veth peer inside
+    // the container. Use it to rename that specific interface to eth_wan.
+    const netInfo = await network.inspect();
+    const mac = netInfo.Containers?.[node.containerId]?.MacAddress ?? '';
+
+    const container = docker.getContainer(node.containerId);
+    const exec = await container.exec({
+      Cmd: ['sh', '-c', `
+        mac="${mac}"
+        i=0
+        while [ $i -lt 20 ]; do
+          for f in /sys/class/net/eth*; do
+            [ -e "$f" ] || continue
+            cur=$(cat "$f/address" 2>/dev/null)
+            name=$(basename "$f")
+            if [ "$cur" = "$mac" ]; then
+              ip link set "$name" down
+              ip link set "$name" name eth_wan
+              ip link set eth_wan up
+              ip addr flush dev eth_wan 2>/dev/null || true
+              exit 0
+            fi
+          done
+          i=$((i+1))
+          sleep 0.1
+        done
+      `],
+      AttachStdout: true,
+      AttachStderr: true,
+    });
+
+    const stream = await exec.start({ hijack: true, stdin: false });
+    await new Promise<void>((resolve) => {
+      stream.resume();
+      stream.on('end', resolve);
+      stream.on('error', (e: Error) => { logger.warn('[createWanBridge exec]', e); resolve(); });
+    });
+  },
+
+  async deleteWanBridge(nodeId: string): Promise<void> {
+    const networkName = `netlab_wan_${nodeId}`;
+    try {
+      const existing = await docker.listNetworks({ filters: { name: [networkName] } });
+      for (const net of existing) {
+        if (net.Name === networkName) {
+          try { await docker.getNetwork(net.Id).remove(); } catch { /* already removed */ }
+        }
+      }
+    } catch { /* ignore */ }
+  },
+
   async deleteLink(name: string): Promise<void> {
     const link = links.get(name);
     if (!link?.dockerNetworkId) throw new Error(`Link "${name}" non trovato`);

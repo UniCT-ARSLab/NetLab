@@ -209,6 +209,20 @@ export function registerIpcHandlers(_win: BrowserWindow): void {
         }
       }
 
+      // Internet-facing nodes get a dedicated WAN bridge with ip_masquerade=true.
+      // The student must still configure ip_forward, iptables MASQUERADE rules,
+      // and routes manually — Docker only handles the NAT subnet setup.
+      if (node.internetFacing) {
+        try {
+          await NetworkService.createWanBridge(node.id);
+        } catch (e) {
+          logger.error(`createWanBridge failed for ${node.name}:`, e);
+          throw new Error(
+            `Impossibile creare l'interfaccia WAN per "${node.name}": ${e instanceof Error ? e.message : String(e)}`
+          );
+        }
+      }
+
       return node;
     } catch (e) {
       throw toUserError(e);
@@ -229,6 +243,10 @@ export function registerIpcHandlers(_win: BrowserWindow): void {
   ipcMain.handle(IPC_CHANNELS.NODE_DELETE, async (_e, id: string) => {
     try {
       TerminalService.close(`term_${id}`);
+      const node = NodeService.get(id);
+      if (node?.internetFacing) {
+        await NetworkService.deleteWanBridge(id);
+      }
       return await NodeService.delete(id);
     } catch (e) {
       throw toUserError(e);

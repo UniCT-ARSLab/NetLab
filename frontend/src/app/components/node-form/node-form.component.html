@@ -108,6 +108,19 @@
       severity="secondary" [text]="true" size="small"
       (onClick)="addMount()" />
 
+    <p-divider><span class="divider-label">{{ 'form.connectivity' | translate }}</span></p-divider>
+
+    <div class="field-toggle">
+      <p-toggleswitch [(ngModel)]="internetFacing" inputId="internetFacing" />
+      <label for="internetFacing">{{ 'form.internet-facing-label' | translate }}</label>
+    </div>
+    @if (internetFacing) {
+      <small class="field-hint">
+        <i class="pi pi-info-circle"></i>
+        <span>{{ 'form.internet-facing-hint' | translate }}</span>
+      </small>
+    }
+
   </div>
 
   <ng-template #footer>

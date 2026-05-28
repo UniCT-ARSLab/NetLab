@@ -5,6 +5,7 @@ export interface CreateNodeParams {
   memoryMb?: number;
   interfaces?: Array<{ name: string; linkName: string }>;
   mounts?: Array<{ hostPath: string; containerPath: string }>;
+  internetFacing?: boolean;
 }
 
 export const IPC_CHANNELS = {

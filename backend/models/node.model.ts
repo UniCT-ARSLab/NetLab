@@ -20,4 +20,5 @@ export interface LabNode {
   cpuLimit?: number;  // cores (es. 0.5, 1.0, 2.0)
   memoryMb?: number;  // RAM in MB (es. 256, 512, 1024)
   mounts?: Mount[];
+  internetFacing?: boolean;
 }
