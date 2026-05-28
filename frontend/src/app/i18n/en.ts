@@ -51,7 +51,7 @@ export const en: Record<string, string> = {
   'form.mounted-hint': 'Folders are mounted at container creation. To apply changes, delete and recreate the node.',
   'form.connectivity':           'Connectivity',
   'form.internet-facing-label':  'Internet access (eth_wan)',
-  'form.internet-facing-hint':   'Docker will create a NAT bridge with ip_masquerade enabled. You must manually configure ip_forward, iptables MASQUERADE rules, and routes on connected nodes.',
+  'form.internet-facing-hint':   'eth_wan gets an IP automatically (like an ISP uplink). You still configure: ip_forward, iptables MASQUERADE on eth_wan, and the default route on connected nodes.',
 
   'links.title': 'Manage Links',
   'links.hint': 'A link is a collision domain (isolated Docker bridge). Nodes connected to the same link communicate at layer 2; IPs are configured manually from within the container.',

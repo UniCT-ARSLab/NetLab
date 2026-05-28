@@ -214,7 +214,6 @@ export const NetworkService = {
               ip link set "$name" down
               ip link set "$name" name eth_wan
               ip link set eth_wan up
-              ip addr flush dev eth_wan 2>/dev/null || true
               exit 0
             fi
           done
