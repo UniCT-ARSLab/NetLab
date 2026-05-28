@@ -213,8 +213,8 @@ export const NetworkService = {
             name=$(basename "$f")
             if [ "$cur" = "$mac" ]; then
               ip link set "$name" down
-              ip link set "$name" name "${ifaceName}"
-              ip link set "${ifaceName}" up
+              ip link set "$name" name "${wanIfaceName}"
+              ip link set "${wanIfaceName}" up
               exit 0
             fi
           done
