@@ -209,6 +209,7 @@ export class TopologyViewComponent implements OnChanges, AfterViewInit, OnDestro
     };
     this.svgEl.addEventListener('wheel', this.wheelHandler, { passive: false });
     this.centerView();
+    this.cdr.detectChanges();
   }
 
   ngOnDestroy(): void {
