@@ -52,6 +52,7 @@ export const en: Record<string, string> = {
   'form.connectivity':           'Connectivity',
   'form.internet-facing-label':  'Internet access',
   'form.wan-iface-label':        'WAN interface name',
+  'form.wan-badge':              'WAN · Internet',
   'form.internet-facing-hint':   'eth_wan gets an IP automatically (like an ISP uplink). You still configure: ip_forward, iptables MASQUERADE on eth_wan, and the default route on connected nodes.',
 
   'links.title': 'Manage Links',

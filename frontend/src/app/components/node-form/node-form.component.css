@@ -43,6 +43,37 @@
   margin: 0.25rem 0;
 }
 
+/* Internet access banner */
+.internet-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.625rem 0.875rem;
+  border-radius: 8px;
+  border: 1px solid var(--p-content-border-color);
+  background: var(--p-content-background);
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.internet-banner--on {
+  border-color: var(--p-primary-color);
+  background: color-mix(in srgb, var(--p-primary-color) 8%, transparent);
+}
+
+.internet-banner__left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.internet-banner__left .pi {
+  font-size: 1rem;
+  color: var(--p-primary-color);
+}
+
+/* Interfaces */
 .interfaces-list {
   display: flex;
   flex-direction: column;
@@ -53,6 +84,29 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.iface-row--wan {
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  border: 1px dashed var(--p-primary-color);
+  background: color-mix(in srgb, var(--p-primary-color) 5%, transparent);
+}
+
+.iface-row__wan-icon {
+  color: var(--p-primary-color);
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.iface-row__wan-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--p-primary-color);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .iface-row__name {
@@ -76,6 +130,7 @@
   margin-right: 0.2rem;
 }
 
+/* Shared folders */
 .mounts-list {
   display: flex;
   flex-direction: column;
@@ -102,16 +157,4 @@
 .mount-row__container {
   flex: 1;
   min-width: 0;
-}
-
-.field-toggle {
-  display: flex;
-  align-items: center;
-  gap: 0.625rem;
-}
-
-.field-toggle label {
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
 }

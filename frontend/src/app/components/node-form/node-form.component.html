@@ -23,6 +23,15 @@
         optionLabel="label" optionValue="value" [fluid]="true" />
     </div>
 
+    <!-- Internet access toggle — prominent, right after image -->
+    <div class="internet-banner" [class.internet-banner--on]="internetFacing">
+      <div class="internet-banner__left">
+        <i class="pi pi-globe"></i>
+        <span>{{ 'form.internet-facing-label' | translate }}</span>
+      </div>
+      <p-toggleswitch [(ngModel)]="internetFacing" inputId="internetFacing" />
+    </div>
+
     <p-divider><span class="divider-label">{{ 'form.resources' | translate }}</span></p-divider>
 
     <div class="field-row">
@@ -48,7 +57,7 @@
       </small>
     }
 
-    @if (editNode?.status === 'running' && interfaces.length > 0) {
+    @if (editNode?.status === 'running' && (interfaces.length > 0 || internetFacing)) {
       <small class="field-hint field-hint--warn">
         <i class="pi pi-exclamation-triangle"></i>
         <span>{{ 'form.running-iface-hint' | translate }}</span>
@@ -56,6 +65,16 @@
     }
 
     <div class="interfaces-list">
+      <!-- WAN interface row (shown when internetFacing is on) -->
+      @if (internetFacing) {
+        <div class="iface-row iface-row--wan">
+          <i class="pi pi-globe iface-row__wan-icon"></i>
+          <input pInputText [(ngModel)]="wanIfaceName"
+            placeholder="eth_wan" class="iface-row__name" />
+          <span class="iface-row__wan-badge">{{ 'form.wan-badge' | translate }}</span>
+        </div>
+      }
+
       @for (iface of interfaces; track $index; let i = $index) {
         <div class="iface-row">
           <input pInputText [(ngModel)]="iface.name" class="iface-row__name" />
@@ -107,24 +126,6 @@
     <p-button [label]="'btn.add-folder' | translate" icon="pi pi-folder-open"
       severity="secondary" [text]="true" size="small"
       (onClick)="addMount()" />
-
-    <p-divider><span class="divider-label">{{ 'form.connectivity' | translate }}</span></p-divider>
-
-    <div class="field-toggle">
-      <p-toggleswitch [(ngModel)]="internetFacing" inputId="internetFacing" />
-      <label for="internetFacing">{{ 'form.internet-facing-label' | translate }}</label>
-    </div>
-    @if (internetFacing) {
-      <div class="field">
-        <label for="wanIfaceName">{{ 'form.wan-iface-label' | translate }}</label>
-        <input pInputText id="wanIfaceName" [(ngModel)]="wanIfaceName"
-          placeholder="eth_wan" [fluid]="true" />
-      </div>
-      <small class="field-hint">
-        <i class="pi pi-info-circle"></i>
-        <span>{{ 'form.internet-facing-hint' | translate }}</span>
-      </small>
-    }
 
   </div>
 
