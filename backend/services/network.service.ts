@@ -26,7 +26,7 @@ export const NetworkService = {
   async reconcile(): Promise<void> {
     let changed = false;
     const dockerNetworks = await docker.listNetworks();
-    const netlabNets = dockerNetworks.filter(n => n.Name?.startsWith('netlab_'));
+    const netlabNets = dockerNetworks.filter(n => n.Name?.startsWith('netlab_') && !n.Name.startsWith('netlab_wan_'));
 
     // Import orphaned Docker networks; re-associate if ID changed (e.g. Docker Desktop restart)
     for (const net of netlabNets) {
