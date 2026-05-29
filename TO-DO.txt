@@ -7,12 +7,10 @@ Dialog installazione
 Topologia
 Probabile bug nel dialog di creazione del nodo, selezione shared folder - FUNZIONA
 link ha al massimo due nodi (simula il cavo vero e proprio) - FUNZIONA
-json ip a NON FUNZIONA su alpine docker 
-la topologia dovrà mostrare per il singolo nodo informazioni come ip delle interfacce (ip a json) 
-e route (ip rooute) nella card (solo a container UP)
-
-
 1. Bug interfacce non presenti se assegnate ma non assegno link ma lo faccio successivamente. 
 es. router 6 e 7 connessi tramite link E su interfacce eth0, router 7 continua a non avere eth0 con ip a
 anche riavviando app non succede niente, prima avevo chiuso up non c'erano più i link collegati nella topologia 
 ma non ho testatose erano effettivamente collegate le macchine - FIXATO
+
+
+qualcosa nella topologia per far capire che un nodo ha accesso a internet
