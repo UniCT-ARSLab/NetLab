@@ -76,6 +76,12 @@ export const it: Record<string, string> = {
   'node.net-routes':        'Rotte',
   'node.net-refresh':       'Aggiorna snapshot',
   'node.net-snapshot-hint': 'Snapshot — i dati potrebbero non essere aggiornati',
+  'node.net-col-iface':     'Interfaccia',
+  'node.net-col-state':     'Stato',
+  'node.net-col-address':   'Indirizzo',
+  'node.net-col-dest':      'Destinazione',
+  'node.net-col-via':       'Via',
+  'node.net-col-dev':       'Interfaccia',
 
   'error.title': 'Errore',
 

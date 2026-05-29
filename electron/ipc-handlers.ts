@@ -30,14 +30,14 @@ function demuxDockerStream(stream: NodeJS.ReadableStream): Promise<string> {
   });
 }
 
-// Parse `ip addr` output (works on both full iproute2 and BusyBox).
-// Returns one line per non-loopback interface: "eth0      UP     10.0.1.50/24"
-function formatAddrSection(raw: string): string {
+interface AddrRow   { name: string; state: string; ips: string; }
+interface RouteRow  { dest: string; via: string; dev: string; }
+
+function parseAddrSection(raw: string): AddrRow[] {
   const entries: Array<{ name: string; state: string; ips: string[] }> = [];
   let cur: { name: string; state: string; ips: string[] } | null = null;
 
   for (const line of raw.split('\n')) {
-    // Interface header: "2: eth0@if5: <FLAGS> ... state UP ..."
     const ifm = line.match(/^\d+:\s+([^:@\s]+)(?:@\S+)?:\s+<[^>]+>.*\bstate\s+(\S+)/);
     if (ifm) {
       if (cur) entries.push(cur);
@@ -48,39 +48,31 @@ function formatAddrSection(raw: string): string {
     const v4 = line.match(/^\s+inet\s+(\S+)/);
     if (v4) { cur.ips.push(v4[1]); continue; }
     const v6 = line.match(/^\s+inet6\s+(\S+)/);
-    // skip loopback ::1 and link-local fe80::
     if (v6 && !v6[1].startsWith('fe80') && v6[1] !== '::1/128') cur.ips.push(v6[1]);
   }
   if (cur) entries.push(cur);
 
-  const lines = entries
+  return entries
     .filter(e => e.name !== 'lo')
-    .map(e => {
-      const state = e.state === 'UP' ? 'UP' : e.state === 'DOWN' ? 'DOWN' : '?';
-      const ips   = e.ips.length ? e.ips.join('  ') : 'no address';
-      return `${e.name.padEnd(12)}${state.padEnd(8)}${ips}`;
-    });
-  return lines.length ? lines.join('\n') : '—';
+    .map(e => ({
+      name:  e.name,
+      state: e.state === 'UP' ? 'UP' : e.state === 'DOWN' ? 'DOWN' : '?',
+      ips:   e.ips.length ? e.ips.join(', ') : '—',
+    }));
 }
 
-// Parse `ip route` output and strip kernel noise, presenting it concisely.
-// "10.0.1.0/24 dev eth0 proto kernel scope link src 10.0.1.50"
-//   → "10.0.1.0/24         → eth0  (direct)"
-// "default via 10.0.1.1 dev eth0" → "default             → 10.0.1.1  (eth0)"
-function formatRouteSection(raw: string): string {
-  const rows = raw.split('\n').filter(l => l.trim()).map(line => {
+function parseRouteSection(raw: string): RouteRow[] {
+  return raw.split('\n').filter(l => l.trim()).map(line => {
     const p      = line.trim().split(/\s+/);
     const dest   = p[0];
     const viaIdx = p.indexOf('via');
     const devIdx = p.indexOf('dev');
-    const gw  = viaIdx >= 0 ? p[viaIdx + 1] : undefined;
-    const dev = devIdx >= 0 ? p[devIdx + 1] : undefined;
-    const d   = dest.padEnd(20);
-    if (gw && dev) return `${d}→ ${gw}  (${dev})`;
-    if (dev)       return `${d}→ ${dev}  (direct)`;
-    return line.trim();
+    return {
+      dest,
+      via: viaIdx >= 0 ? p[viaIdx + 1] : '',
+      dev: devIdx >= 0 ? p[devIdx + 1] : '',
+    };
   });
-  return rows.length ? rows.join('\n') : '—';
 }
 
 function toUserError(e: unknown): Error {
@@ -266,7 +258,7 @@ export function registerIpcHandlers(_win: BrowserWindow): void {
       const stream = await exec.start({ hijack: true, stdin: false });
       const output = await demuxDockerStream(stream);
       const [addrRaw = '', routeRaw = ''] = output.split('§§§');
-      return { addr: formatAddrSection(addrRaw), routes: formatRouteSection(routeRaw) };
+      return { addr: parseAddrSection(addrRaw), routes: parseRouteSection(routeRaw) };
     } catch (e) {
       throw toUserError(e);
     }

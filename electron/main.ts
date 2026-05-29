@@ -42,6 +42,7 @@ async function createWindow(): Promise<void> {
     win.webContents.openDevTools();
   } else {
     await win.loadFile(path.join(__dirname, '../frontend/browser/index.html'));
+    win.webContents.on('devtools-opened', () => win?.webContents.closeDevTools());
   }
 
   const dockerOk = await isDockerAvailable();

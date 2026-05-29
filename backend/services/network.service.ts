@@ -80,9 +80,6 @@ export const NetworkService = {
       },
       IPAM: { Driver: 'default', Config: [] },
     });
-    // traffic on the same bridge must pass through iptables on Linux 
-    // we cannot use Internal=true adds stricter rules that
-    // can silently drop packets with non-Docker-assigned source IPs.
 
     const link: LabLink = { name, dockerNetworkId: network.id, connectedNodes: [] };
     links.set(name, link);
@@ -101,7 +98,7 @@ export const NetworkService = {
 
     const network = docker.getNetwork(link.dockerNetworkId);
 
-    const netInfo = await network.inspect();
+    let netInfo = await network.inspect();
     const alreadyConnected = !!(netInfo.Containers?.[node.containerId]);
 
     if (!alreadyConnected) {
@@ -110,27 +107,38 @@ export const NetworkService = {
         throw new Error(`Link "${linkName}" is already at capacity (max 2 nodes)`);
       }
       await network.connect({ Container: node.containerId });
+      netInfo = await network.inspect();
     }
+
+    const mac = netInfo.Containers?.[node.containerId]?.MacAddress ?? '';
 
     const container = docker.getContainer(node.containerId);
     const exec = await container.exec({
       Cmd: ['sh', '-c', `
+        mac="${mac}"
+        if ip link show "${ifaceName}" > /dev/null 2>&1; then
+          ip link set "${ifaceName}" up
+          ip addr flush dev "${ifaceName}" 2>/dev/null || true
+          exit 0
+        fi
         i=0
-        while [ $i -lt 20 ]; do
+        while [ $i -lt 5 ]; do
           for f in /sys/class/net/eth*; do
             [ -e "$f" ] || continue
-            name=$(basename "$f")
-            if ! ip link show "${ifaceName}" > /dev/null 2>&1; then
+            cur=$(cat "$f/address" 2>/dev/null)
+            if [ "$cur" = "$mac" ]; then
+              name=$(basename "$f")
               ip link set "$name" down
               ip link set "$name" name "${ifaceName}"
+              ip link set "${ifaceName}" up
+              ip addr flush dev "${ifaceName}" 2>/dev/null || true
+              exit 0
             fi
-            break 2
           done
           i=$((i+1))
           sleep 0.1
         done
-        ip link set "${ifaceName}" up 2>/dev/null || true
-        ip addr flush dev "${ifaceName}" 2>/dev/null || true
+        echo "WARN: ${ifaceName} not found via MAC $mac" >&2
       `],
       AttachStdout: true,
       AttachStderr: true,
@@ -164,22 +172,25 @@ export const NetworkService = {
   },
 
   // Creates a NAT-enabled WAN bridge for an internet-facing node and
-  // attaches the container. The new interface inside the container is
-  // identified by its MAC address (reported by Docker after connect)
-  // and renamed to wanIfaceName so the student knows where to route traffic.
+  // attaches the container. We identify it through MAC
   async createWanBridge(nodeId: string, wanIfaceName: string): Promise<void> {
     const node = NodeService.get(nodeId);
     if (!node?.containerId) throw new Error(`Nodo ${nodeId} non ha un container`);
 
     const networkName = `netlab_wan_${nodeId}`;
 
-    // Clean up any leftover WAN network from a previous run
     try {
       const existing = await docker.listNetworks({ filters: { name: [networkName] } });
       for (const net of existing) {
-        if (net.Name === networkName) {
-          try { await docker.getNetwork(net.Id).remove(); } catch { /* already gone */ }
-        }
+        if (net.Name !== networkName) continue;
+        const netObj = docker.getNetwork(net.Id);
+        try {
+          const info = await netObj.inspect();
+          for (const containerId of Object.keys(info.Containers ?? {})) {
+            try { await netObj.disconnect({ Container: containerId, Force: true }); } catch { /* ignore */ }
+          }
+          await netObj.remove();
+        } catch { /* already gone */ }
       }
     } catch { /* ignore */ }
 

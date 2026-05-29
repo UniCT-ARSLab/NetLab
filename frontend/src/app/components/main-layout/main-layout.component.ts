@@ -20,7 +20,9 @@ import { LabLink } from '../../../../../backend/models/link.model';
 import { NetworkService } from '../../services/network.service';
 import { NodeService } from '../../services/node.service';
 
-interface NetworkInfo { addr: string; routes: string; }
+interface AddrRow  { name: string; state: string; ips: string; }
+interface RouteRow { dest: string; via: string;   dev: string; }
+interface NetworkInfo { addr: AddrRow[]; routes: RouteRow[]; }
 
 @Component({
   selector: 'app-main-layout',

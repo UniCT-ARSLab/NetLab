@@ -155,16 +155,52 @@
                       <p class="net-info__error">{{ netInfoError() }}</p>
                     } @else if (networkInfo()) {
                       <div class="net-info__body">
-                        @if (networkInfo()!.addr) {
+                        @if (networkInfo()!.addr.length) {
                           <div class="net-info__section">
                             <span class="net-info__sub">{{ 'node.net-addr' | translate }}</span>
-                            <pre class="net-info__code">{{ networkInfo()!.addr }}</pre>
+                            <table class="net-info__table">
+                              <thead>
+                                <tr>
+                                  <th>{{ 'node.net-col-iface' | translate }}</th>
+                                  <th>{{ 'node.net-col-state' | translate }}</th>
+                                  <th>{{ 'node.net-col-address' | translate }}</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                @for (row of networkInfo()!.addr; track row.name) {
+                                  <tr>
+                                    <td class="net-info__iface">{{ row.name }}</td>
+                                    <td>
+                                      <span class="net-info__state" [class.net-info__state--up]="row.state === 'UP'" [class.net-info__state--down]="row.state === 'DOWN'">{{ row.state }}</span>
+                                    </td>
+                                    <td class="net-info__ips">{{ row.ips }}</td>
+                                  </tr>
+                                }
+                              </tbody>
+                            </table>
                           </div>
                         }
-                        @if (networkInfo()!.routes) {
+                        @if (networkInfo()!.routes.length) {
                           <div class="net-info__section">
                             <span class="net-info__sub">{{ 'node.net-routes' | translate }}</span>
-                            <pre class="net-info__code">{{ networkInfo()!.routes }}</pre>
+                            <table class="net-info__table">
+                              <thead>
+                                <tr>
+                                  <th>{{ 'node.net-col-dest' | translate }}</th>
+                                  <th>{{ 'node.net-col-via' | translate }}</th>
+                                  <th>{{ 'node.net-col-dev' | translate }}</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                @for (row of networkInfo()!.routes; track row.dest) {
+                                  <tr>
+                                    <td class="net-info__iface">{{ row.dest }}</td>
+                                    <td class="net-info__ips">{{ row.via || '—' }}</td>
+                                    <td>{{ row.dev }}</td>
+                                  </tr>
+                                }
+                              </tbody>
+                            </table>
                           </div>
                         }
                       </div>

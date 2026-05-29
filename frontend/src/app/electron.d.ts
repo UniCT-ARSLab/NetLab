@@ -26,7 +26,7 @@ declare global {
       startNode: (id: string) => Promise<LabNode>;
       stopNode: (id: string) => Promise<LabNode>;
       deleteNode: (id: string) => Promise<void>;
-      getNetworkInfo: (id: string) => Promise<{ addr: string; routes: string }>;
+      getNetworkInfo: (id: string) => Promise<{ addr: { name: string; state: string; ips: string }[]; routes: { dest: string; via: string; dev: string }[] }>;
 
       // Link
       listLinks: () => Promise<LabLink[]>;
