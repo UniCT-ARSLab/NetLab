@@ -26,9 +26,7 @@ async function createWindow(): Promise<void> {
     title: 'NetLab',
     ...(process.platform === 'darwin'
       ? { titleBarStyle: 'hidden' as const, trafficLightPosition: { x: 16, y: 14 } }
-      : {
-          frame: false,
-        }),
+      : { frame: false }),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
