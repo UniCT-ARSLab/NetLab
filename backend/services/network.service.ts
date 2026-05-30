@@ -132,9 +132,9 @@ export const NetworkService = {
             exit 0
           fi
           # Target name taken by a different interface (e.g. WAN reconnected first)
-          # Move it away so we can claim the name
+          # Move it to eth_tmp so eth* globs still match it (createWanBridge finds it by MAC)
           ip link set "$target" down 2>/dev/null || true
-          ip link set "$target" name "__tmp_$target" 2>/dev/null || true
+          ip link set "$target" name "eth_tmp" 2>/dev/null || true
         fi
         # Find interface by MAC and rename
         i=0
@@ -167,6 +167,34 @@ export const NetworkService = {
       stream.resume();
       stream.on('end', resolve);
       stream.on('error', (e: Error) => { logger.warn('[attachInterface exec]', e); resolve(); });
+    });
+  },
+
+  // Removes orphaned veth interfaces left in the namespace from the previous run.
+  // When Docker stops a container it destroys the host-side veth peer; the
+  // container-side stub remains with carrier=0. We delete those before attaching
+  // new interfaces so they don't interfere with naming.
+  async cleanOrphanedInterfaces(nodeId: string): Promise<void> {
+    const node = NodeService.get(nodeId);
+    if (!node?.containerId) return;
+    const container = docker.getContainer(node.containerId);
+    const exec = await container.exec({
+      Cmd: ['sh', '-c', `
+        for f in /sys/class/net/eth*; do
+          [ -e "$f" ] || continue
+          name=$(basename "$f")
+          carrier=$(cat "$f/carrier" 2>/dev/null || echo "0")
+          [ "$carrier" = "0" ] && ip link delete "$name" 2>/dev/null || true
+        done
+      `],
+      AttachStdout: true,
+      AttachStderr: true,
+    });
+    const stream = await exec.start({ hijack: true, stdin: false });
+    await new Promise<void>((resolve) => {
+      stream.resume();
+      stream.on('end', resolve);
+      stream.on('error', () => resolve());
     });
   },
 

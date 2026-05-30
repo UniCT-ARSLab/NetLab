@@ -185,10 +185,11 @@ export function registerIpcHandlers(_win: BrowserWindow): void {
     try {
       const node = await NodeService.start(id);
 
-      // Always attach interfaces — handles both first start and restarts where
-      // a link was added/changed since the container was created.
-      // attachInterface is idempotent (skips network.connect if already connected)
-      // and ends with an ip addr flush, so no separate flushInterface needed.
+      // Remove orphaned veth interfaces (carrier=0 means the host-side peer was
+      // destroyed when the container stopped). New veth pairs added by Docker on
+      // this start will already have carrier=1.
+      await NetworkService.cleanOrphanedInterfaces(node.id);
+
       for (const iface of node.interfaces) {
         if (!iface.linkName) continue;
         try {
