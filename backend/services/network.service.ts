@@ -156,18 +156,17 @@ export const NetworkService = {
     });
   },
 
-  // Applies /etc/network/interfaces (ifup -a) and runs /etc/local.d/*.start scripts.
-  // Called after all interfaces are attached, since openrc does not run as PID 1 in Docker.
+  // Runs /shared/startup.sh if present. Called after all interfaces are attached
+  // so the script can safely reference eth0, eth_wan, etc.
+  // openrc does not run as PID 1 in Docker containers, so this is the only
+  // reliable hook for persistent network configuration.
   async runStartupScripts(nodeId: string): Promise<void> {
     const node = NodeService.get(nodeId);
     if (!node?.containerId) return;
     const container = docker.getContainer(node.containerId);
     const exec = await container.exec({
       Cmd: ['sh', '-c', `
-        ifup -a 2>/dev/null || true
-        for f in /etc/local.d/*.start; do
-          [ -x "$f" ] && "$f" 2>/dev/null || true
-        done
+        [ -f /shared/startup.sh ] && sh /shared/startup.sh 2>/dev/null || true
       `],
       AttachStdout: true,
       AttachStderr: true,
