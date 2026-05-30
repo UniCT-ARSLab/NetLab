@@ -123,7 +123,7 @@ export const NetworkService = {
       Cmd: ['sh', '-c', `
         mac="${mac}"
         target="${ifaceName}"
-        # Check idempotency: target interface already has this MAC
+        # Idempotency: target already has this MAC
         if ip link show "$target" > /dev/null 2>&1; then
           cur=$(cat /sys/class/net/$target/address 2>/dev/null || true)
           if [ "$cur" = "$mac" ]; then
@@ -131,6 +131,10 @@ export const NetworkService = {
             ip addr flush dev "$target" 2>/dev/null || true
             exit 0
           fi
+          # Target name taken by a different interface (e.g. WAN reconnected first)
+          # Move it away so we can claim the name
+          ip link set "$target" down 2>/dev/null || true
+          ip link set "$target" name "__tmp_$target" 2>/dev/null || true
         fi
         # Find interface by MAC and rename
         i=0
