@@ -192,11 +192,7 @@ export const NodeService = {
       },
     });
 
-    // Remove from the default bridge so the container starts with only lo
-    // attachInterface then connects each user-defined interface to its netlab network
-    try {
-      await docker.getNetwork('bridge').disconnect({ Container: container.id });
-    } catch { /* already disconnected or bridge absent */ }
+    try { await docker.getNetwork('bridge').disconnect({ Container: container.id }); } catch { /* ignore */ }
 
     await container.start();
     node.containerId = container.id;

@@ -78,7 +78,7 @@ export const NetworkService = {
         'com.docker.network.bridge.enable_icc': 'true',
         'com.docker.network.bridge.enable_ip_masquerade': 'false',
       },
-      IPAM: { Driver: 'default', Config: [] },
+      IPAM: { Driver: 'default', Config: [{ Subnet: '100.64.0.0/10' }] },
     });
 
     const link: LabLink = { name, dockerNetworkId: network.id, connectedNodes: [] };
@@ -87,8 +87,8 @@ export const NetworkService = {
     return link;
   },
 
-  // Attaches a running container's interface to a Docker network and renames it
-  // it is ok to call even if the container is already connected
+  // Attaches a running container's interface to a Docker network and renames it.
+  // Idempotent: safe to call even if already connected.
   async attachInterface(nodeId: string, ifaceName: string, linkName: string): Promise<void> {
     const node = NodeService.get(nodeId);
     if (!node || !node.containerId) throw new Error(`Nodo ${nodeId} non avviato`);
@@ -98,7 +98,7 @@ export const NetworkService = {
 
     const network = docker.getNetwork(link.dockerNetworkId);
 
-    let netInfo = await network.inspect();
+    const netInfo = await network.inspect();
     const alreadyConnected = !!(netInfo.Containers?.[node.containerId]);
 
     if (!alreadyConnected) {
@@ -106,48 +106,51 @@ export const NetworkService = {
       if (othersConnected >= 2) {
         throw new Error(`Link "${linkName}" is already at capacity (max 2 nodes)`);
       }
-      await network.connect({ Container: node.containerId });
-      netInfo = await network.inspect();
+      try {
+        await network.connect({ Container: node.containerId });
+      } catch (e: any) {
+        if (e?.statusCode !== 409) throw e;
+      }
     }
-
-    const mac = netInfo.Containers?.[node.containerId]?.MacAddress ?? '';
 
     const container = docker.getContainer(node.containerId);
     const exec = await container.exec({
       Cmd: ['sh', '-c', `
-        mac="${mac}"
         if ip link show "${ifaceName}" > /dev/null 2>&1; then
           ip link set "${ifaceName}" up
           ip addr flush dev "${ifaceName}" 2>/dev/null || true
+          ifup "${ifaceName}" 2>/dev/null || true
           exit 0
         fi
         i=0
         while [ $i -lt 5 ]; do
+          new_iface=""
           for f in /sys/class/net/eth*; do
             [ -e "$f" ] || continue
-            cur=$(cat "$f/address" 2>/dev/null)
-            if [ "$cur" = "$mac" ]; then
-              name=$(basename "$f")
-              ip link set "$name" down
-              ip link set "$name" name "${ifaceName}"
-              ip link set "${ifaceName}" up
-              ip addr flush dev "${ifaceName}" 2>/dev/null || true
-              exit 0
-            fi
+            name=$(basename "$f")
+            [ "$name" = "${ifaceName}" ] && continue
+            new_iface="$name"
           done
+          if [ -n "$new_iface" ]; then
+            ip link set "$new_iface" down
+            ip link set "$new_iface" name "${ifaceName}"
+            ip link set "${ifaceName}" up
+            ip addr flush dev "${ifaceName}" 2>/dev/null || true
+            ifup "${ifaceName}" 2>/dev/null || true
+            exit 0
+          fi
           i=$((i+1))
           sleep 0.1
         done
-        echo "WARN: ${ifaceName} not found via MAC $mac" >&2
+        echo "WARN: ${ifaceName} not found" >&2
       `],
       AttachStdout: true,
       AttachStderr: true,
     });
 
-    // Wait for the script to actually finish before returning
     const stream = await exec.start({ hijack: true, stdin: false });
     await new Promise<void>((resolve) => {
-      stream.resume(); // drain so the process isn't blocked waiting for stdout to be read
+      stream.resume();
       stream.on('end', resolve);
       stream.on('error', (e: Error) => { logger.warn('[attachInterface exec]', e); resolve(); });
     });
@@ -194,6 +197,12 @@ export const NetworkService = {
       }
     } catch { /* ignore */ }
 
+    // Derive a stable /24 subnet from nodeId so the WAN IP is the same across restarts.
+    // Uses 172.30.0.0/16 (slots 1-250), outside Docker's default pool.
+    const slot = (parseInt(nodeId.replace(/-/g, '').slice(0, 8), 16) % 250) + 1;
+    const wanSubnet  = `172.30.${slot}.0/24`;
+    const wanGateway = `172.30.${slot}.1`;
+
     const network = await docker.createNetwork({
       Name: networkName,
       Driver: 'bridge',
@@ -201,13 +210,11 @@ export const NetworkService = {
         'com.docker.network.bridge.enable_icc': 'true',
         'com.docker.network.bridge.enable_ip_masquerade': 'true',
       },
-      IPAM: { Driver: 'default', Config: [] },
+      IPAM: { Driver: 'default', Config: [{ Subnet: wanSubnet, Gateway: wanGateway }] },
     });
 
     await network.connect({ Container: node.containerId });
 
-    // Docker reports the MAC address it assigned to the new veth peer inside
-    // the container. Use it to rename that specific interface to eth_wan.
     const netInfo = await network.inspect();
     const mac = netInfo.Containers?.[node.containerId]?.MacAddress ?? '';
 
@@ -215,14 +222,13 @@ export const NetworkService = {
     const exec = await container.exec({
       Cmd: ['sh', '-c', `
         mac="${mac}"
-        ifaceName="${wanIfaceName}"
         i=0
-        while [ $i -lt 20 ]; do
+        while [ $i -lt 5 ]; do
           for f in /sys/class/net/eth*; do
             [ -e "$f" ] || continue
             cur=$(cat "$f/address" 2>/dev/null)
-            name=$(basename "$f")
             if [ "$cur" = "$mac" ]; then
+              name=$(basename "$f")
               ip link set "$name" down
               ip link set "$name" name "${wanIfaceName}"
               ip link set "${wanIfaceName}" up
@@ -232,6 +238,7 @@ export const NetworkService = {
           i=$((i+1))
           sleep 0.1
         done
+        echo "WARN: ${wanIfaceName} not found via MAC $mac" >&2
       `],
       AttachStdout: true,
       AttachStderr: true,
@@ -259,10 +266,16 @@ export const NetworkService = {
 
   async deleteLink(name: string): Promise<void> {
     const link = links.get(name);
-    if (!link?.dockerNetworkId) throw new Error(`Link "${name}" non trovato`);
+    if (!link) throw new Error(`Link "${name}" non trovato`);
 
-    const network = docker.getNetwork(link.dockerNetworkId);
-    await network.remove();
+    if (link.dockerNetworkId) {
+      try {
+        await docker.getNetwork(link.dockerNetworkId).remove();
+      } catch (e: any) {
+        if (e?.statusCode !== 404) throw e;
+      }
+    }
+
     links.delete(name);
     persist();
   },
