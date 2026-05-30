@@ -185,6 +185,8 @@ export class MainLayoutComponent implements OnInit {
         this.setLoading(node.id, false);
         this.messageService.add({ severity: 'success', summary: `"${node.name}"${this.t('node.started-suffix')}`, life: 3000 });
         this.networkService.loadLinks().subscribe();
+        this.clearNetSnapshot();
+        void this.fetchNetworkInfo();
       },
       error: (e: Error) => { this.setLoading(node.id, false); this.showError(e); },
     });
@@ -199,6 +201,7 @@ export class MainLayoutComponent implements OnInit {
         this.setLoading(node.id, false);
         this.messageService.add({ severity: 'info', summary: `"${node.name}"${this.t('node.stopped-suffix')}`, life: 3000 });
         this.networkService.loadLinks().subscribe();
+        this.clearNetSnapshot();
       },
       error: (e: Error) => { this.setLoading(node.id, false); this.showError(e); },
     });
@@ -239,6 +242,12 @@ export class MainLayoutComponent implements OnInit {
       running: 'success', stopped: 'secondary', created: 'info', error: 'danger',
     };
     return map[status];
+  }
+
+  private clearNetSnapshot(): void {
+    this.networkInfo.set(null);
+    this.netInfoTime.set(null);
+    this.netInfoError.set(null);
   }
 
   private showError(e: Error): void {
