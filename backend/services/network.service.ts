@@ -156,6 +156,30 @@ export const NetworkService = {
     });
   },
 
+  // Applies /etc/network/interfaces (ifup -a) and runs /etc/local.d/*.start scripts.
+  // Called after all interfaces are attached, since openrc does not run as PID 1 in Docker.
+  async runStartupScripts(nodeId: string): Promise<void> {
+    const node = NodeService.get(nodeId);
+    if (!node?.containerId) return;
+    const container = docker.getContainer(node.containerId);
+    const exec = await container.exec({
+      Cmd: ['sh', '-c', `
+        ifup -a 2>/dev/null || true
+        for f in /etc/local.d/*.start; do
+          [ -x "$f" ] && "$f" 2>/dev/null || true
+        done
+      `],
+      AttachStdout: true,
+      AttachStderr: true,
+    });
+    const stream = await exec.start({ hijack: true, stdin: false });
+    await new Promise<void>((resolve) => {
+      stream.resume();
+      stream.on('end', resolve);
+      stream.on('error', () => resolve());
+    });
+  },
+
   // flush for docker auto assigned ip
   async flushInterface(nodeId: string, ifaceName: string): Promise<void> {
     const node = NodeService.get(nodeId);

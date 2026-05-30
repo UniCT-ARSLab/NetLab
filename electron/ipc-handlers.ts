@@ -215,6 +215,11 @@ export function registerIpcHandlers(_win: BrowserWindow): void {
         }
       }
 
+      // Apply /etc/network/interfaces and /etc/local.d/*.start — openrc does not
+      // run as PID 1 in Docker so we trigger startup scripts ourselves after
+      // all interfaces are attached and renamed.
+      await NetworkService.runStartupScripts(node.id);
+
       return node;
     } catch (e) {
       throw toUserError(e);
