@@ -174,7 +174,7 @@ export const NetworkService = {
     const container = docker.getContainer(node.containerId);
     const exec = await container.exec({
       Cmd: ['sh', '-c', `
-        ifup -a 2>/dev/null || true
+        ifup -f -a 2>/dev/null || true
         for f in /etc/local.d/*.start; do
           [ -x "$f" ] && "$f" 2>/dev/null || true
         done
