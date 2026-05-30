@@ -125,7 +125,7 @@ export const NetworkService = {
         i=0
         while [ $i -lt 5 ]; do
           new_iface=""
-          for f in /sys/class/net/eth*; do
+          for f in /sys/class/net/eth[0-9]*; do
             [ -e "$f" ] || continue
             name=$(basename "$f")
             [ "$name" = "${ifaceName}" ] && continue
