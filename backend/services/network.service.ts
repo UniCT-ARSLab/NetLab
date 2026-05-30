@@ -89,6 +89,8 @@ export const NetworkService = {
 
   // Attaches a running container's interface to a Docker network and renames it.
   // Idempotent: safe to call even if already connected.
+  // Uses MAC-based identification so the rename is correct regardless of the
+  // order Docker reconnects networks on container restart.
   async attachInterface(nodeId: string, ifaceName: string, linkName: string): Promise<void> {
     const node = NodeService.get(nodeId);
     if (!node || !node.containerId) throw new Error(`Nodo ${nodeId} non avviato`);
@@ -98,7 +100,7 @@ export const NetworkService = {
 
     const network = docker.getNetwork(link.dockerNetworkId);
 
-    const netInfo = await network.inspect();
+    let netInfo = await network.inspect();
     const alreadyConnected = !!(netInfo.Containers?.[node.containerId]);
 
     if (!alreadyConnected) {
@@ -111,38 +113,46 @@ export const NetworkService = {
       } catch (e: any) {
         if (e?.statusCode !== 409) throw e;
       }
+      netInfo = await network.inspect();
     }
+
+    const mac = netInfo.Containers?.[node.containerId]?.MacAddress ?? '';
 
     const container = docker.getContainer(node.containerId);
     const exec = await container.exec({
       Cmd: ['sh', '-c', `
-        if ip link show "${ifaceName}" > /dev/null 2>&1; then
-          ip link set "${ifaceName}" up
-          ip addr flush dev "${ifaceName}" 2>/dev/null || true
-          ifup "${ifaceName}" 2>/dev/null || true
-          exit 0
-        fi
-        i=0
-        while [ $i -lt 5 ]; do
-          new_iface=""
-          for f in /sys/class/net/eth[0-9]*; do
-            [ -e "$f" ] || continue
-            name=$(basename "$f")
-            [ "$name" = "${ifaceName}" ] && continue
-            new_iface="$name"
-          done
-          if [ -n "$new_iface" ]; then
-            ip link set "$new_iface" down
-            ip link set "$new_iface" name "${ifaceName}"
-            ip link set "${ifaceName}" up
-            ip addr flush dev "${ifaceName}" 2>/dev/null || true
-            ifup "${ifaceName}" 2>/dev/null || true
+        mac="${mac}"
+        target="${ifaceName}"
+        # Check idempotency: target interface already has this MAC
+        if ip link show "$target" > /dev/null 2>&1; then
+          cur=$(cat /sys/class/net/$target/address 2>/dev/null || true)
+          if [ "$cur" = "$mac" ]; then
+            ip link set "$target" up
+            ip addr flush dev "$target" 2>/dev/null || true
             exit 0
           fi
+        fi
+        # Find interface by MAC and rename
+        i=0
+        while [ $i -lt 20 ]; do
+          for f in /sys/class/net/eth*; do
+            [ -e "$f" ] || continue
+            cur=$(cat "$f/address" 2>/dev/null || true)
+            if [ "$cur" = "$mac" ]; then
+              name=$(basename "$f")
+              if [ "$name" != "$target" ]; then
+                ip link set "$name" down
+                ip link set "$name" name "$target"
+              fi
+              ip link set "$target" up
+              ip addr flush dev "$target" 2>/dev/null || true
+              exit 0
+            fi
+          done
           i=$((i+1))
           sleep 0.1
         done
-        echo "WARN: ${ifaceName} not found" >&2
+        echo "WARN: $target not found via MAC $mac" >&2
       `],
       AttachStdout: true,
       AttachStderr: true,
