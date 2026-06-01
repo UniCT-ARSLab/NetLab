@@ -239,12 +239,6 @@ export const NetworkService = {
       }
     } catch { /* ignore */ }
 
-    // Derive a stable /24 subnet from nodeId so the WAN IP is the same across restarts.
-    // Uses 172.30.0.0/16 (slots 1-250), outside Docker's default pool.
-    const slot = (parseInt(nodeId.replace(/-/g, '').slice(0, 8), 16) % 250) + 1;
-    const wanSubnet  = `172.30.${slot}.0/24`;
-    const wanGateway = `172.30.${slot}.1`;
-
     const network = await docker.createNetwork({
       Name: networkName,
       Driver: 'bridge',
@@ -252,7 +246,6 @@ export const NetworkService = {
         'com.docker.network.bridge.enable_icc': 'true',
         'com.docker.network.bridge.enable_ip_masquerade': 'true',
       },
-      IPAM: { Driver: 'default', Config: [{ Subnet: wanSubnet, Gateway: wanGateway }] },
     });
 
     await network.connect({ Container: node.containerId });
