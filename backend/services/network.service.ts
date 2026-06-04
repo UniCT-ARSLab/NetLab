@@ -245,13 +245,14 @@ export const NetworkService = {
     try {
       await network.connect({ Container: node.containerId });
     } catch (e: any) {
-      if (e?.statusCode !== 409) throw e;
+      const msg = String((e as any)?.message ?? '').toLowerCase();
+      if (e?.statusCode !== 409 && !msg.includes('already exists')) throw e;
     }
 
-    const netInfo = await network.inspect();
-    const mac = netInfo.Containers?.[node.containerId]?.MacAddress ?? '';
-
     const container = docker.getContainer(node.containerId);
+    const containerInfo = await container.inspect();
+    const mac = containerInfo.NetworkSettings?.Networks?.[networkName]?.MacAddress ?? '';
+
     const exec = await container.exec({
       Cmd: ['sh', '-c', `
         mac="${mac}"
