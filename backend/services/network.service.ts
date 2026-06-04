@@ -224,31 +224,29 @@ export const NetworkService = {
 
     const networkName = `netlab_wan_${nodeId}`;
 
+    let network: ReturnType<typeof docker.getNetwork>;
+
+    const existing = await docker.listNetworks({ filters: { name: [networkName] } });
+    const found = existing.find(n => n.Name === networkName);
+
+    if (found) {
+      network = docker.getNetwork(found.Id);
+    } else {
+      network = await docker.createNetwork({
+        Name: networkName,
+        Driver: 'bridge',
+        Options: {
+          'com.docker.network.bridge.enable_icc': 'true',
+          'com.docker.network.bridge.enable_ip_masquerade': 'true',
+        },
+      });
+    }
+
     try {
-      const existing = await docker.listNetworks({ filters: { name: [networkName] } });
-      for (const net of existing) {
-        if (net.Name !== networkName) continue;
-        const netObj = docker.getNetwork(net.Id);
-        try {
-          const info = await netObj.inspect();
-          for (const containerId of Object.keys(info.Containers ?? {})) {
-            try { await netObj.disconnect({ Container: containerId, Force: true }); } catch { /* ignore */ }
-          }
-          await netObj.remove();
-        } catch { /* already gone */ }
-      }
-    } catch { /* ignore */ }
-
-    const network = await docker.createNetwork({
-      Name: networkName,
-      Driver: 'bridge',
-      Options: {
-        'com.docker.network.bridge.enable_icc': 'true',
-        'com.docker.network.bridge.enable_ip_masquerade': 'true',
-      },
-    });
-
-    await network.connect({ Container: node.containerId });
+      await network.connect({ Container: node.containerId });
+    } catch (e: any) {
+      if (e?.statusCode !== 409) throw e;
+    }
 
     const netInfo = await network.inspect();
     const mac = netInfo.Containers?.[node.containerId]?.MacAddress ?? '';
