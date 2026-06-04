@@ -195,15 +195,16 @@ export class MainLayoutComponent implements OnInit {
   onStop(): void {
     const node = this.selectedNode();
     if (!node) return;
-    this.setLoading(node.id, true);
-    this.nodeService.stopNode(node.id).subscribe({
+    const stoppedId = node.id;
+    this.setLoading(stoppedId, true);
+    this.nodeService.stopNode(stoppedId).subscribe({
       next: () => {
-        this.setLoading(node.id, false);
+        this.setLoading(stoppedId, false);
         this.messageService.add({ severity: 'info', summary: `"${node.name}"${this.t('node.stopped-suffix')}`, life: 3000 });
         this.networkService.loadLinks().subscribe();
-        this.clearNetSnapshot();
+        if (this.selectedNodeId() === stoppedId) this.clearNetSnapshot();
       },
-      error: (e: Error) => { this.setLoading(node.id, false); this.showError(e); },
+      error: (e: Error) => { this.setLoading(stoppedId, false); this.showError(e); },
     });
   }
 

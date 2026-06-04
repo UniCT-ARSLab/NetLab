@@ -240,7 +240,17 @@
   <div class="link-dialog-body">
     <p class="link-dialog-hint">{{ 'links.hint' | translate }}</p>
 
+    <div class="link-create-section">
+      <div class="link-create-row">
+        <input pInputText [(ngModel)]="newLinkName" [placeholder]="'links.placeholder' | translate"
+          (keyup.enter)="createLink()" class="link-create-input" />
+        <p-button icon="pi pi-plus" [label]="'links.create' | translate" (onClick)="createLink()"
+          [disabled]="!newLinkName.trim()" />
+      </div>
+    </div>
+
     @if (links().length > 0) {
+      <p-divider />
       <div class="link-list">
         @for (link of links(); track link.name) {
           <div class="link-row">
@@ -255,18 +265,7 @@
           </div>
         }
       </div>
-      <p-divider />
     }
-
-    <div class="link-create-section">
-      <label class="link-create-label">{{ 'links.new-link' | translate }}</label>
-      <div class="link-create-row">
-        <input pInputText [(ngModel)]="newLinkName" [placeholder]="'links.placeholder' | translate"
-          (keyup.enter)="createLink()" class="link-create-input" />
-        <p-button icon="pi pi-plus" [label]="'links.create' | translate" (onClick)="createLink()"
-          [disabled]="!newLinkName.trim()" />
-      </div>
-    </div>
   </div>
 
   <ng-template #footer>
