@@ -222,23 +222,6 @@ export const NetworkService = {
     });
   },
 
-  // flush for docker auto assigned ip
-  async flushInterface(nodeId: string, ifaceName: string): Promise<void> {
-    const node = NodeService.get(nodeId);
-    if (!node?.containerId) return;
-    const container = docker.getContainer(node.containerId);
-    const exec = await container.exec({
-      Cmd: ['sh', '-c', `ip addr flush dev "${ifaceName}" 2>/dev/null || true`],
-      AttachStdout: true,
-      AttachStderr: true,
-    });
-    const stream = await exec.start({ hijack: true, stdin: false });
-    await new Promise<void>((resolve) => {
-      stream.resume();
-      stream.on('end', resolve);
-      stream.on('error', (e: Error) => { logger.warn('[flushInterface]', e); resolve(); });
-    });
-  },
 
   // Creates a NAT-enabled WAN bridge for an internet-facing node and
   // attaches the container. We identify it through MAC
