@@ -74,7 +74,6 @@ export const NetworkService = {
     const network = await docker.createNetwork({
       Name: `netlab_${name}`,
       Driver: 'bridge',
-      EnableIPv4: false,
       Options: {
         'com.docker.network.bridge.enable_icc': 'true',
         'com.docker.network.bridge.enable_ip_masquerade': 'false',
@@ -117,18 +116,21 @@ export const NetworkService = {
       netInfo = await network.inspect();
     }
 
-    const mac = netInfo.Containers?.[node.containerId]?.MacAddress ?? '';
+    const mac      = netInfo.Containers?.[node.containerId]?.MacAddress ?? '';
+    const dockerIp = netInfo.Containers?.[node.containerId]?.IPv4Address ?? '';
 
     const container = docker.getContainer(node.containerId);
     const exec = await container.exec({
       Cmd: ['sh', '-c', `
         mac="${mac}"
         target="${ifaceName}"
+        docker_ip="${dockerIp}"
         # Idempotency: target already has this MAC
         if ip link show "$target" > /dev/null 2>&1; then
           cur=$(cat /sys/class/net/$target/address 2>/dev/null || true)
           if [ "$cur" = "$mac" ]; then
             ip link set "$target" up
+            [ -n "$docker_ip" ] && ip addr del "$docker_ip" dev "$target" 2>/dev/null || true
             exit 0
           fi
           # Target name taken by a different interface (e.g. WAN reconnected first)
@@ -149,6 +151,7 @@ export const NetworkService = {
                 ip link set "$name" name "$target"
               fi
               ip link set "$target" up
+              [ -n "$docker_ip" ] && ip addr del "$docker_ip" dev "$target" 2>/dev/null || true
               exit 0
             fi
           done
