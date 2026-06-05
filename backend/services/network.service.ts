@@ -78,7 +78,7 @@ export const NetworkService = {
         'com.docker.network.bridge.enable_icc': 'true',
         'com.docker.network.bridge.enable_ip_masquerade': 'false',
       },
-      IPAM: { Driver: 'default', Config: [{ Subnet: '100.64.0.0/10' }] },
+      IPAM: { Driver: 'default', Config: [] },
     });
 
     const link: LabLink = { name, dockerNetworkId: network.id, connectedNodes: [] };
@@ -128,7 +128,6 @@ export const NetworkService = {
           cur=$(cat /sys/class/net/$target/address 2>/dev/null || true)
           if [ "$cur" = "$mac" ]; then
             ip link set "$target" up
-            ip addr flush dev "$target" 2>/dev/null || true
             exit 0
           fi
           # Target name taken by a different interface (e.g. WAN reconnected first)
@@ -149,7 +148,6 @@ export const NetworkService = {
                 ip link set "$name" name "$target"
               fi
               ip link set "$target" up
-              ip addr flush dev "$target" 2>/dev/null || true
               exit 0
             fi
           done
