@@ -78,7 +78,7 @@ export const NetworkService = {
         'com.docker.network.bridge.enable_icc': 'true',
         'com.docker.network.bridge.enable_ip_masquerade': 'false',
       },
-      IPAM: { Driver: 'default', Config: [{ Subnet: '100.64.0.0/10' }] },
+      IPAM: { Driver: 'default', Config: [] },
     });
 
     const link: LabLink = { name, dockerNetworkId: network.id, connectedNodes: [] };
@@ -116,19 +116,21 @@ export const NetworkService = {
       netInfo = await network.inspect();
     }
 
-    const mac = netInfo.Containers?.[node.containerId]?.MacAddress ?? '';
+    const mac      = netInfo.Containers?.[node.containerId]?.MacAddress ?? '';
+    const dockerIp = netInfo.Containers?.[node.containerId]?.IPv4Address ?? '';
 
     const container = docker.getContainer(node.containerId);
     const exec = await container.exec({
       Cmd: ['sh', '-c', `
         mac="${mac}"
         target="${ifaceName}"
+        docker_ip="${dockerIp}"
         # Idempotency: target already has this MAC
         if ip link show "$target" > /dev/null 2>&1; then
           cur=$(cat /sys/class/net/$target/address 2>/dev/null || true)
           if [ "$cur" = "$mac" ]; then
             ip link set "$target" up
-            ip addr flush dev "$target" 2>/dev/null || true
+            [ -n "$docker_ip" ] && ip addr del "$docker_ip" dev "$target" 2>/dev/null || true
             exit 0
           fi
           # Target name taken by a different interface (e.g. WAN reconnected first)
@@ -149,7 +151,7 @@ export const NetworkService = {
                 ip link set "$name" name "$target"
               fi
               ip link set "$target" up
-              ip addr flush dev "$target" 2>/dev/null || true
+              [ -n "$docker_ip" ] && ip addr del "$docker_ip" dev "$target" 2>/dev/null || true
               exit 0
             fi
           done
@@ -198,13 +200,17 @@ export const NetworkService = {
     });
   },
 
-  // flush for docker auto assigned ip
-  async flushInterface(nodeId: string, ifaceName: string): Promise<void> {
+  // Calls ifdown/ifup for each interface so /etc/network/interfaces is applied
+  // after our attach+rename. No-op if the interface isn't defined in the file.
+  async applyInterfacesConfig(nodeId: string, ifaceNames: string[]): Promise<void> {
     const node = NodeService.get(nodeId);
-    if (!node?.containerId) return;
+    if (!node?.containerId || ifaceNames.length === 0) return;
     const container = docker.getContainer(node.containerId);
+    const script = ifaceNames
+      .map(n => `ifdown "${n}" 2>/dev/null || true; ifup "${n}" 2>/dev/null || true`)
+      .join('\n');
     const exec = await container.exec({
-      Cmd: ['sh', '-c', `ip addr flush dev "${ifaceName}" 2>/dev/null || true`],
+      Cmd: ['sh', '-c', script],
       AttachStdout: true,
       AttachStderr: true,
     });
@@ -212,9 +218,10 @@ export const NetworkService = {
     await new Promise<void>((resolve) => {
       stream.resume();
       stream.on('end', resolve);
-      stream.on('error', (e: Error) => { logger.warn('[flushInterface]', e); resolve(); });
+      stream.on('error', () => resolve());
     });
   },
+
 
   // Creates a NAT-enabled WAN bridge for an internet-facing node and
   // attaches the container. We identify it through MAC

@@ -202,6 +202,9 @@ export function registerIpcHandlers(_win: BrowserWindow): void {
         }
       }
 
+      const attachedIfaces = node.interfaces.filter(i => i.linkName).map(i => i.name);
+      await NetworkService.applyInterfacesConfig(node.id, attachedIfaces);
+
       // Internet-facing nodes get a dedicated WAN bridge with ip_masquerade=true.
       // The student must still configure ip_forward, iptables MASQUERADE rules,
       // and routes manually — Docker only handles the NAT subnet setup.

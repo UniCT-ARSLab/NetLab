@@ -64,12 +64,11 @@ export class NodeFormComponent implements OnChanges {
   }
 
   readonly imageOptions = [
-    { label: 'kathara/base', value: 'kathara/base' },
-    { label: 'alpine',       value: 'alpine' },
+    { label: 'alpine', value: 'alpine' },
   ];
 
   name           = '';
-  image          = 'kathara/base';
+  image          = 'alpine';
   cpuLimit       = 1.0;
   memoryMb       = 256;
   interfaces: InterfaceRow[] = [];
@@ -168,7 +167,7 @@ export class NodeFormComponent implements OnChanges {
   }
 
   private reset(): void {
-    this.name = ''; this.image = 'kathara/base';
+    this.name = ''; this.image = 'alpine';
     this.cpuLimit = 1.0; this.memoryMb = 256;
     this.interfaces = []; this.mounts = [];
     this.internetFacing = false;
