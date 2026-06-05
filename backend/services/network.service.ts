@@ -200,6 +200,28 @@ export const NetworkService = {
     });
   },
 
+  // Calls ifdown/ifup for each interface so /etc/network/interfaces is applied
+  // after our attach+rename. No-op if the interface isn't defined in the file.
+  async applyInterfacesConfig(nodeId: string, ifaceNames: string[]): Promise<void> {
+    const node = NodeService.get(nodeId);
+    if (!node?.containerId || ifaceNames.length === 0) return;
+    const container = docker.getContainer(node.containerId);
+    const script = ifaceNames
+      .map(n => `ifdown "${n}" 2>/dev/null || true; ifup "${n}" 2>/dev/null || true`)
+      .join('\n');
+    const exec = await container.exec({
+      Cmd: ['sh', '-c', script],
+      AttachStdout: true,
+      AttachStderr: true,
+    });
+    const stream = await exec.start({ hijack: true, stdin: false });
+    await new Promise<void>((resolve) => {
+      stream.resume();
+      stream.on('end', resolve);
+      stream.on('error', () => resolve());
+    });
+  },
+
   // flush for docker auto assigned ip
   async flushInterface(nodeId: string, ifaceName: string): Promise<void> {
     const node = NodeService.get(nodeId);
