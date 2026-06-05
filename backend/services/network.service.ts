@@ -78,7 +78,7 @@ export const NetworkService = {
         'com.docker.network.bridge.enable_icc': 'true',
         'com.docker.network.bridge.enable_ip_masquerade': 'false',
       },
-      IPAM: { Driver: 'default', Config: [] },
+      IPAM: { Driver: 'null' },
     });
 
     const link: LabLink = { name, dockerNetworkId: network.id, connectedNodes: [] };
