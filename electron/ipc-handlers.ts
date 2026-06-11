@@ -185,11 +185,6 @@ export function registerIpcHandlers(_win: BrowserWindow): void {
     try {
       const node = await NodeService.start(id);
 
-      // Remove orphaned veth interfaces (carrier=0 means the host-side peer was
-      // destroyed when the container stopped). New veth pairs added by Docker on
-      // this start will already have carrier=1.
-      await NetworkService.cleanOrphanedInterfaces(node.id);
-
       for (const iface of node.interfaces) {
         if (!iface.linkName) continue;
         try {

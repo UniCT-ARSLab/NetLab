@@ -172,36 +172,6 @@ export const NetworkService = {
     });
   },
 
-  // Removes orphaned veth interfaces left in the namespace from the previous run.
-  // When Docker stops a container it destroys the host-side veth peer; the
-  // container-side stub remains with carrier=0. We delete those before attaching
-  // new interfaces so they don't interfere with naming.
-  async cleanOrphanedInterfaces(nodeId: string): Promise<void> {
-    const node = NodeService.get(nodeId);
-    if (!node?.containerId) return;
-    const container = docker.getContainer(node.containerId);
-    const exec = await container.exec({
-      Cmd: ['sh', '-c', `
-        for f in /sys/class/net/eth*; do
-          [ -e "$f" ] || continue
-          name=$(basename "$f")
-          carrier=$(cat "$f/carrier" 2>/dev/null || echo "0")
-          [ "$carrier" = "0" ] && ip link delete "$name" 2>/dev/null || true
-        done
-      `],
-      AttachStdout: true,
-      AttachStderr: true,
-    });
-    const stream = await exec.start({ hijack: true, stdin: false });
-    await new Promise<void>((resolve) => {
-      stream.resume();
-      stream.on('end', resolve);
-      stream.on('error', () => resolve());
-    });
-  },
-
-  // Calls ifdown/ifup for each interface so /etc/network/interfaces is applied
-  // after our attach+rename. No-op if the interface isn't defined in the file.
   async applyInterfacesConfig(nodeId: string, ifaceNames: string[]): Promise<void> {
     const node = NodeService.get(nodeId);
     if (!node?.containerId || ifaceNames.length === 0) return;
