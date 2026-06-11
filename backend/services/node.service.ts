@@ -220,8 +220,8 @@ export const NodeService = {
 
     if (node.containerId) {
       const container = docker.getContainer(node.containerId);
-      try { await container.stop(); } catch { /* already stopped */ }
-      await container.remove();
+      try { await container.stop(); } catch { /* already stopped or gone */ }
+      try { await container.remove(); } catch (e: any) { if (e?.statusCode !== 404) throw e; }
     }
 
     nodes.delete(id);
