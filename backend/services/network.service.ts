@@ -220,11 +220,14 @@ export const NetworkService = {
 
     const container = docker.getContainer(node.containerId);
     const containerInfo = await container.inspect();
-    const mac = containerInfo.NetworkSettings?.Networks?.[networkName]?.MacAddress ?? '';
+    const netInfo = containerInfo.NetworkSettings?.Networks?.[networkName];
+    const mac      = netInfo?.MacAddress ?? '';
+    const gateway  = netInfo?.Gateway ?? '';
 
     const exec = await container.exec({
       Cmd: ['sh', '-c', `
         mac="${mac}"
+        gateway="${gateway}"
         i=0
         while [ $i -lt 5 ]; do
           for f in /sys/class/net/eth*; do
@@ -235,6 +238,7 @@ export const NetworkService = {
               ip link set "$name" down
               ip link set "$name" name "${wanIfaceName}"
               ip link set "${wanIfaceName}" up
+              [ -n "$gateway" ] && ip route add default via "$gateway" dev "${wanIfaceName}" 2>/dev/null || true
               exit 0
             fi
           done
