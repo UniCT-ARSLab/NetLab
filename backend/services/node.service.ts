@@ -105,6 +105,9 @@ export const NodeService = {
   },
 
   async create(params: CreateNodeParams): Promise<LabNode> {
+    if (Array.from(nodes.values()).some(n => n.name === params.name)) {
+      throw new Error(`Esiste già un nodo con il nome "${params.name}"`);
+    }
     const node: LabNode = {
       id: uuidv4(),
       name: params.name,
