@@ -87,10 +87,7 @@ export const NetworkService = {
     return link;
   },
 
-  // Attaches a running container's interface to a Docker network and renames it.
-  // Idempotent: safe to call even if already connected.
-  // Uses MAC-based identification so the rename is correct regardless of the
-  // order Docker reconnects networks on container restart.
+  // renaming of interfaces based on mac identification
   async attachInterface(nodeId: string, ifaceName: string, linkName: string): Promise<void> {
     const node = NodeService.get(nodeId);
     if (!node || !node.containerId) throw new Error(`Nodo ${nodeId} non avviato`);
@@ -125,7 +122,6 @@ export const NetworkService = {
         mac="${mac}"
         target="${ifaceName}"
         docker_ip="${dockerIp}"
-        # Idempotency: target already has this MAC
         if ip link show "$target" > /dev/null 2>&1; then
           cur=$(cat /sys/class/net/$target/address 2>/dev/null || true)
           if [ "$cur" = "$mac" ]; then
@@ -133,12 +129,9 @@ export const NetworkService = {
             [ -n "$docker_ip" ] && ip addr del "$docker_ip" dev "$target" 2>/dev/null || true
             exit 0
           fi
-          # Target name taken by a different interface (e.g. WAN reconnected first)
-          # Move it to eth_tmp so eth* globs still match it (createWanBridge finds it by MAC)
           ip link set "$target" down 2>/dev/null || true
           ip link set "$target" name "eth_tmp" 2>/dev/null || true
         fi
-        # Find interface by MAC and rename
         i=0
         while [ $i -lt 20 ]; do
           for f in /sys/class/net/eth*; do
@@ -193,8 +186,7 @@ export const NetworkService = {
   },
 
 
-  // Creates a NAT-enabled WAN bridge for an internet-facing node and
-  // attaches the container. We identify it through MAC
+  // nat bridge for internet, sort of dhcp
   async createWanBridge(nodeId: string, wanIfaceName: string): Promise<void> {
     const node = NodeService.get(nodeId);
     if (!node?.containerId) throw new Error(`Nodo ${nodeId} non ha un container`);
