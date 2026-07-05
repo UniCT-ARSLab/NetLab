@@ -184,6 +184,7 @@ export function registerIpcHandlers(_win: BrowserWindow): void {
   ipcMain.handle(IPC_CHANNELS.NODE_START, async (_e, id: string) => {
     try {
       const node = await NodeService.start(id);
+      await NetworkService.removeAutoTunnelInterfaces(node.id);
 
       for (const iface of node.interfaces) {
         if (!iface.linkName) continue;

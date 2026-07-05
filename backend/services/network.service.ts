@@ -87,6 +87,27 @@ export const NetworkService = {
     return link;
   },
 
+  // removes kernel auto-created tunnel pseudo-devices (tunl0, gre0, sit0, ...)
+  // that some Docker Desktop kernels load by default in every netns
+  async removeAutoTunnelInterfaces(nodeId: string): Promise<void> {
+    const node = NodeService.get(nodeId);
+    if (!node?.containerId) return;
+    const container = docker.getContainer(node.containerId);
+    const ifaces = ['tunl0', 'gre0', 'gretap0', 'erspan0', 'ip_vti0', 'ip6_vti0', 'sit0', 'ip6tnl0', 'ip6gre0'];
+    const script = ifaces.map(n => `ip link delete "${n}" 2>/dev/null || true`).join('\n');
+    const exec = await container.exec({
+      Cmd: ['sh', '-c', script],
+      AttachStdout: true,
+      AttachStderr: true,
+    });
+    const stream = await exec.start({ hijack: true, stdin: false });
+    await new Promise<void>((resolve) => {
+      stream.resume();
+      stream.on('end', resolve);
+      stream.on('error', () => resolve());
+    });
+  },
+
   // renaming of interfaces based on mac identification
   async attachInterface(nodeId: string, ifaceName: string, linkName: string): Promise<void> {
     const node = NodeService.get(nodeId);
