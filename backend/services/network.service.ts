@@ -97,8 +97,11 @@ export const NetworkService = {
     const tunnelTyped: Record<string, string> = { tunl0: 'ipip', gre0: 'gre', sit0: 'sit' };
     const script = ifaces.map(n => {
       const mode = tunnelTyped[n];
-      const cmd = mode ? `ip tunnel del "${n}" mode ${mode}` : `ip link delete "${n}"`;
-      return `echo "-- delete ${n} (${mode ?? 'link'}) --"; ${cmd} 2>&1; echo "exit=$?"`;
+      const typedCmd = mode ? `ip tunnel del "${n}" mode ${mode}` : `ip tunnel del "${n}"`;
+      return `echo "-- delete ${n} --"\n`
+        + `ip tunnel del "${n}" 2>&1; echo "tunnel(no mode) exit=$?"\n`
+        + `${typedCmd} 2>&1; echo "tunnel(typed) exit=$?"\n`
+        + `ip link delete "${n}" 2>&1; echo "link exit=$?"`;
     }).join('\n')
       + '\necho "-- after delete --"\nip -o link show';
     const exec = await container.exec({
