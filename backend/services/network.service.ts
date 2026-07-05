@@ -94,7 +94,8 @@ export const NetworkService = {
     if (!node?.containerId) return;
     const container = docker.getContainer(node.containerId);
     const ifaces = ['tunl0', 'gre0', 'gretap0', 'erspan0', 'ip_vti0', 'ip6_vti0', 'sit0', 'ip6tnl0', 'ip6gre0'];
-    const script = ifaces.map(n => `echo "-- delete ${n} --"; ip link delete "${n}"`).join('\n');
+    const script = ifaces.map(n => `echo "-- delete ${n} --"; ip link delete "${n}"`).join('\n')
+      + '\necho "-- after delete --"\nip -o link show';
     const exec = await container.exec({
       Cmd: ['sh', '-c', script],
       AttachStdout: true,
