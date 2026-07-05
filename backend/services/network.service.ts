@@ -94,8 +94,12 @@ export const NetworkService = {
     if (!node?.containerId) return;
     const container = docker.getContainer(node.containerId);
     const ifaces = ['tunl0', 'gre0', 'gretap0', 'erspan0', 'ip_vti0', 'ip6_vti0', 'sit0', 'ip6tnl0', 'ip6gre0'];
-    const script = 'echo "-- which ip --"; which ip; ip -V 2>&1\n'
-      + ifaces.map(n => `echo "-- delete ${n} --"; ip link delete "${n}" 2>&1; echo "exit=$?"`).join('\n')
+    const tunnelTyped: Record<string, string> = { tunl0: 'ipip', gre0: 'gre', sit0: 'sit' };
+    const script = ifaces.map(n => {
+      const mode = tunnelTyped[n];
+      const cmd = mode ? `ip tunnel del "${n}" mode ${mode}` : `ip link delete "${n}"`;
+      return `echo "-- delete ${n} (${mode ?? 'link'}) --"; ${cmd} 2>&1; echo "exit=$?"`;
+    }).join('\n')
       + '\necho "-- after delete --"\nip -o link show';
     const exec = await container.exec({
       Cmd: ['sh', '-c', script],
