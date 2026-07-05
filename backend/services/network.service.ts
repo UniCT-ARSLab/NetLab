@@ -94,18 +94,30 @@ export const NetworkService = {
     if (!node?.containerId) return;
     const container = docker.getContainer(node.containerId);
     const ifaces = ['tunl0', 'gre0', 'gretap0', 'erspan0', 'ip_vti0', 'ip6_vti0', 'sit0', 'ip6tnl0', 'ip6gre0'];
-    const script = ifaces.map(n => `ip link delete "${n}" 2>/dev/null || true`).join('\n');
+    const script = ifaces.map(n => `echo "-- delete ${n} --"; ip link delete "${n}"`).join('\n');
     const exec = await container.exec({
       Cmd: ['sh', '-c', script],
       AttachStdout: true,
       AttachStderr: true,
     });
     const stream = await exec.start({ hijack: true, stdin: false });
+    const chunks: Buffer[] = [];
     await new Promise<void>((resolve) => {
-      stream.resume();
+      stream.on('data', (c: Buffer) => chunks.push(c));
       stream.on('end', resolve);
       stream.on('error', () => resolve());
     });
+    const raw = Buffer.concat(chunks);
+    let text = '';
+    let i = 0;
+    while (i + 8 <= raw.length) {
+      const size = raw.readUInt32BE(i + 4);
+      const end  = i + 8 + size;
+      if (end > raw.length) break;
+      text += raw.subarray(i + 8, end).toString('utf8');
+      i = end;
+    }
+    logger.info(`[removeAutoTunnelInterfaces] ${nodeId}:\n${text}`);
   },
 
   // renaming of interfaces based on mac identification
