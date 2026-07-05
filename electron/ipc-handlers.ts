@@ -53,7 +53,6 @@ function parseAddrSection(raw: string): AddrRow[] {
   if (cur) entries.push(cur);
 
   return entries
-    .filter(e => e.name !== 'lo')
     .map(e => ({
       name:  e.name,
       state: e.state === 'UP' ? 'UP' : e.state === 'DOWN' ? 'DOWN' : '?',
@@ -184,7 +183,6 @@ export function registerIpcHandlers(_win: BrowserWindow): void {
   ipcMain.handle(IPC_CHANNELS.NODE_START, async (_e, id: string) => {
     try {
       const node = await NodeService.start(id);
-      await NetworkService.removeAutoTunnelInterfaces(node.id);
 
       for (const iface of node.interfaces) {
         if (!iface.linkName) continue;
