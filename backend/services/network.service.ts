@@ -1,10 +1,33 @@
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
 import { docker } from './docker.client';
 import { DbService } from './db.service';
 import { NodeService } from './node.service';
 import { logger } from '../../electron/logger';
 import { LabLink } from '../models/link.model';
 
+const NSENTER_HELPER_IMAGE = 'netlab-nsenter-helper:latest';
+const NSENTER_HELPER_DOCKERFILE = 'FROM alpine:3.20\nRUN apk add --no-cache util-linux\nENTRYPOINT ["nsenter"]\n';
+
 let links = new Map<string, LabLink>();
+
+async function ensureNsenterHelperImage(): Promise<void> {
+  try {
+    await docker.getImage(NSENTER_HELPER_IMAGE).inspect();
+  } catch {
+    const contextPath = fs.mkdtempSync(path.join(os.tmpdir(), 'netlab-nsenter-'));
+    fs.writeFileSync(path.join(contextPath, 'Dockerfile'), NSENTER_HELPER_DOCKERFILE);
+    const stream = await docker.buildImage(
+      { context: contextPath, src: ['Dockerfile'] },
+      { t: NSENTER_HELPER_IMAGE }
+    );
+    await new Promise<void>((resolve, reject) => {
+      docker.modem.followProgress(stream, (err: Error | null) => err ? reject(err) : resolve());
+    });
+    fs.rmSync(contextPath, { recursive: true, force: true });
+  }
+}
 
 function persist(): void {
   // runtime only
@@ -87,46 +110,27 @@ export const NetworkService = {
     return link;
   },
 
-  // removes kernel auto-created tunnel pseudo-devices (tunl0, gre0, sit0, ...)
-  // that some Docker Desktop kernels load by default in every netns
-  async removeAutoTunnelInterfaces(nodeId: string): Promise<void> {
-    const node = NodeService.get(nodeId);
-    if (!node?.containerId) return;
-    const container = docker.getContainer(node.containerId);
-    const ifaces = ['tunl0', 'gre0', 'gretap0', 'erspan0', 'ip_vti0', 'ip6_vti0', 'sit0', 'ip6tnl0', 'ip6gre0'];
-    const tunnelTyped: Record<string, string> = { tunl0: 'ipip', gre0: 'gre', sit0: 'sit' };
-    const script = ifaces.map(n => {
-      const mode = tunnelTyped[n];
-      const typedCmd = mode ? `ip tunnel del "${n}" mode ${mode}` : `ip tunnel del "${n}"`;
-      return `echo "-- delete ${n} --"\n`
-        + `ip tunnel del "${n}" 2>&1; echo "tunnel(no mode) exit=$?"\n`
-        + `${typedCmd} 2>&1; echo "tunnel(typed) exit=$?"\n`
-        + `ip link delete "${n}" 2>&1; echo "link exit=$?"`;
-    }).join('\n')
-      + '\necho "-- after delete --"\nip -o link show';
-    const exec = await container.exec({
-      Cmd: ['sh', '-c', script],
+  // Prevents the kernel from auto-creating fallback tunnel devices (tunl0,
+  // gre0, sit0, ...) in new network namespaces. Must run once against the
+  // real init_net (host/VM), since the sysctl only affects namespaces
+  // created after it's set — it cannot be applied from inside a container.
+  async disableFallbackTunnels(): Promise<void> {
+    await ensureNsenterHelperImage();
+    const container = await docker.createContainer({
+      Image: NSENTER_HELPER_IMAGE,
+      Entrypoint: ['nsenter'],
+      Cmd: ['-t', '1', '-n', '--', 'sh', '-c',
+        'echo 1 > /proc/sys/net/core/fb_tunnels_only_for_init_net; cat /proc/sys/net/core/fb_tunnels_only_for_init_net'],
+      HostConfig: { Privileged: true, PidMode: 'host', AutoRemove: true },
       AttachStdout: true,
       AttachStderr: true,
     });
-    const stream = await exec.start({ hijack: true, stdin: false });
+    const stream = await container.attach({ stream: true, stdout: true, stderr: true });
     const chunks: Buffer[] = [];
-    await new Promise<void>((resolve) => {
-      stream.on('data', (c: Buffer) => chunks.push(c));
-      stream.on('end', resolve);
-      stream.on('error', () => resolve());
-    });
-    const raw = Buffer.concat(chunks);
-    let text = '';
-    let i = 0;
-    while (i + 8 <= raw.length) {
-      const size = raw.readUInt32BE(i + 4);
-      const end  = i + 8 + size;
-      if (end > raw.length) break;
-      text += raw.subarray(i + 8, end).toString('utf8');
-      i = end;
-    }
-    logger.info(`[removeAutoTunnelInterfaces] ${nodeId}:\n${text}`);
+    stream.on('data', (c: Buffer) => chunks.push(c));
+    await container.start();
+    const { StatusCode } = await container.wait();
+    logger.info(`[disableFallbackTunnels] exit=${StatusCode} output=${Buffer.concat(chunks).toString('utf8').trim()}`);
   },
 
   // renaming of interfaces based on mac identification

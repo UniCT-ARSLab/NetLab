@@ -52,6 +52,11 @@ async function createWindow(): Promise<void> {
     return;
   }
 
+  if (process.platform === 'darwin') {
+    await NetworkService.disableFallbackTunnels()
+      .catch(e => logger.warn('disableFallbackTunnels fallita:', e));
+  }
+
   // riconciliazione db/docker
   Promise.all([
     NetworkService.reconcile(),
