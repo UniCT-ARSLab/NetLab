@@ -11,6 +11,7 @@ const NSENTER_HELPER_IMAGE = 'netlab-nsenter-helper:latest';
 const NSENTER_HELPER_DOCKERFILE = 'FROM alpine:3.20\nRUN apk add --no-cache util-linux\nENTRYPOINT ["nsenter"]\n';
 
 let links = new Map<string, LabLink>();
+let fallbackTunnelsPromise: Promise<void> | null = null;
 
 async function ensureNsenterHelperImage(): Promise<void> {
   try {
@@ -110,10 +111,18 @@ export const NetworkService = {
     return link;
   },
 
-  // Prevents the kernel from auto-creating fallback tunnel devices (tunl0,
-  // gre0, sit0, ...) in new network namespaces. Must run once against the
-  // real init_net (host/VM), since the sysctl only affects namespaces
-  // created after it's set — it cannot be applied from inside a container.
+  // Cached so every caller (startup + every docker:check) awaits the same
+  // run instead of racing node creation against it.
+  ensureFallbackTunnelsDisabled(): Promise<void> {
+    if (process.platform !== 'darwin') return Promise.resolve();
+    if (!fallbackTunnelsPromise) {
+      fallbackTunnelsPromise = NetworkService.disableFallbackTunnels().catch(e => {
+        logger.warn('disableFallbackTunnels fallita:', e);
+      });
+    }
+    return fallbackTunnelsPromise;
+  },
+
   async disableFallbackTunnels(): Promise<void> {
     await ensureNsenterHelperImage();
     const container = await docker.createContainer({

@@ -164,7 +164,11 @@ export function registerIpcHandlers(_win: BrowserWindow): void {
 
   // DOCKER
 
-  ipcMain.handle('docker:check', async () => isDockerAvailable());
+  ipcMain.handle('docker:check', async () => {
+    const available = await isDockerAvailable();
+    if (available) await NetworkService.ensureFallbackTunnelsDisabled();
+    return available;
+  });
 
   // NODI 
 
