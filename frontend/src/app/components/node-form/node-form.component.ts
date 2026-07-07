@@ -167,7 +167,7 @@ export class NodeFormComponent implements OnChanges {
   }
 
   private reset(): void {
-    this.name = ''; this.image = 'alpine';
+    this.name = ''; this.image = 'netlab-alpine';
     this.cpuLimit = 1.0; this.memoryMb = 256;
     this.interfaces = []; this.mounts = [];
     this.internetFacing = false;
