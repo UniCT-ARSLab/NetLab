@@ -7,8 +7,8 @@ import { NodeService } from './node.service';
 import { logger } from '../../electron/logger';
 import { LabLink } from '../models/link.model';
 
-const NSENTER_HELPER_IMAGE = 'netlab-nsenter-helper:latest';
-const NSENTER_HELPER_DOCKERFILE = 'FROM alpine:3.20\nRUN apk add --no-cache util-linux\nENTRYPOINT ["nsenter"]\n';
+const NSENTER_HELPER_IMAGE = 'netlab-nsenter-helper:v2';
+const NSENTER_HELPER_DOCKERFILE = 'FROM alpine:3.20\nRUN apk add --no-cache util-linux iproute2\nENTRYPOINT ["nsenter"]\n';
 
 let links = new Map<string, LabLink>();
 let fallbackTunnelsPromise: Promise<void> | null = null;
