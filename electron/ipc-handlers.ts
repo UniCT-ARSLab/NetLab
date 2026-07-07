@@ -24,12 +24,13 @@ function commandExists(cmd: string): boolean {
 // Apre il terminale nativo del sistema operativo collegato al container.
 // Nessun controllo sulla sessione una volta lanciata: è un processo
 // indipendente dall'app, esattamente come aprirlo a mano.
-async function openNativeTerminal(containerId: string): Promise<void> {
+async function openNativeTerminal(containerId: string, nodeName: string): Promise<void> {
   const dockerCmd = buildDockerExecCommand(containerId);
 
   if (process.platform === 'darwin') {
     const appleScript = `tell application "Terminal"
-      do script "${dockerCmd.replace(/"/g, '\\"')}"
+      set newTab to do script "${dockerCmd.replace(/"/g, '\\"')}"
+      set custom title of newTab to "${nodeName.replace(/"/g, '\\"')}"
       activate
     end tell`;
     await new Promise<void>((resolve, reject) => {
@@ -39,18 +40,19 @@ async function openNativeTerminal(containerId: string): Promise<void> {
   }
 
   if (process.platform === 'win32') {
+    const titledCmd = `title ${nodeName} && ${dockerCmd}`;
     await new Promise<void>((resolve, reject) => {
-      execFile('cmd.exe', ['/c', 'start', '""', 'cmd', '/k', dockerCmd], (err) => err ? reject(err) : resolve());
+      execFile('cmd.exe', ['/c', 'start', nodeName, 'cmd', '/k', titledCmd], (err) => err ? reject(err) : resolve());
     });
     return;
   }
 
   const linuxTerminals: Array<{ cmd: string; args: string[] }> = [
     { cmd: 'x-terminal-emulator', args: ['-e', dockerCmd] },
-    { cmd: 'gnome-terminal', args: ['--', 'sh', '-c', dockerCmd] },
-    { cmd: 'konsole', args: ['-e', dockerCmd] },
-    { cmd: 'xfce4-terminal', args: ['-e', dockerCmd] },
-    { cmd: 'xterm', args: ['-e', dockerCmd] },
+    { cmd: 'gnome-terminal', args: [`--title=${nodeName}`, '--', 'sh', '-c', dockerCmd] },
+    { cmd: 'konsole', args: ['-p', `tabtitle=${nodeName}`, '-e', dockerCmd] },
+    { cmd: 'xfce4-terminal', args: ['-T', nodeName, '-e', dockerCmd] },
+    { cmd: 'xterm', args: ['-T', nodeName, '-e', dockerCmd] },
   ];
   const found = linuxTerminals.find(t => commandExists(t.cmd));
   if (!found) throw new Error('Nessun emulatore di terminale trovato sul sistema.');
@@ -347,7 +349,7 @@ export function registerIpcHandlers(_win: BrowserWindow): void {
     if (node.status !== 'running') throw new Error(`Il nodo "${node.name}" non è in esecuzione`);
 
     try {
-      await openNativeTerminal(node.containerId);
+      await openNativeTerminal(node.containerId, node.name);
     } catch (e) {
       throw toUserError(e);
     }
