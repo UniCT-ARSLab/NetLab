@@ -36,6 +36,9 @@ declare global {
       // Terminale - finestra separata
       openTerminalWindow: (nodeId: string, nodeName: string) => Promise<void>;
 
+      // Terminale - Terminal.app nativo (macOS)
+      openTerminalNative: (nodeId: string) => Promise<void>;
+
       // Terminale - sessione PTY
       openTerminal: (nodeId: string, cols: number, rows: number) => Promise<string>;
       sendInput: (terminalId: string, data: string) => void;

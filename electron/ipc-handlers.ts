@@ -1,12 +1,12 @@
 import { ipcMain, BrowserWindow, app, dialog, screen } from 'electron';
 import * as path from 'path';
+import { execFile } from 'child_process';
 import { IPC_CHANNELS, CreateNodeParams } from '../backend/models/ipc.model';
 import { NodeService } from '../backend/services/node.service';
 import { NetworkService } from '../backend/services/network.service';
 import { TerminalService } from '../backend/services/terminal.service';
 import { docker, isDockerAvailable } from '../backend/services/docker.client';
 import { logger } from './logger';
-const { exec } = require('child_process');
 
 // Docker exec streams are multiplexed: each frame has an 8-byte header
 // (1 byte type, 3 bytes padding, 4 bytes payload length) followed by the payload.
@@ -289,34 +289,41 @@ export function registerIpcHandlers(_win: BrowserWindow): void {
     }
   });
 
-  //TERMINALE 
+  //TERMINALE
 
-  // ipcMain.handle(IPC_CHANNELS.TERMINAL_OPEN, async (_e, nodeId: string, cols: number, rows: number) => {
-  //   const senderWin = BrowserWindow.fromWebContents(_e.sender);
-  //   if (!senderWin) throw new Error('Finestra sorgente non trovata');
-  //   try {
-  //     return TerminalService.open(nodeId, senderWin, cols, rows);
-  //   } catch (e) {
-  //     throw toUserError(e);
-  //   }
-  // });
+  ipcMain.handle(IPC_CHANNELS.TERMINAL_OPEN, async (_e, nodeId: string, cols: number, rows: number) => {
+    const senderWin = BrowserWindow.fromWebContents(_e.sender);
+    if (!senderWin) throw new Error('Finestra sorgente non trovata');
+    try {
+      return TerminalService.open(nodeId, senderWin, cols, rows);
+    } catch (e) {
+      throw toUserError(e);
+    }
+  });
 
-    ipcMain.handle(IPC_CHANNELS.TERMINAL_OPEN, async (_e, nodeId: string, nodeName: string,cols: number, rows: number) => {
-    const dockerCmd = `docker attach ${nodeName}`;
-  
-      // Script per aprire il Terminale ed eseguire il comando
-      const appleScript = `
-              osascript -e 'tell application "Terminal"
-                do script "${dockerCmd}"
-                activate
-              end tell'
-            `;
+  // Apre Terminal.app (macOS) collegato al container con `docker exec`.
+  ipcMain.handle(IPC_CHANNELS.TERMINAL_OPEN_NATIVE, async (_e, nodeId: string) => {
+    if (process.platform !== 'darwin') {
+      throw new Error('Terminale nativo disponibile solo su macOS');
+    }
+    const node = NodeService.get(nodeId);
+    if (!node?.containerId) throw new Error(`Nodo ${nodeId} non trovato o non avviato`);
+    if (node.status !== 'running') throw new Error(`Il nodo "${node.name}" non è in esecuzione`);
 
-      exec(appleScript, (err: any) => {
-        if (err) console.error('Errore nel lancio del Terminale:', err);
+    const shellCmd = `command -v bash > /dev/null 2>&1 && exec bash || exec sh`;
+    const dockerCmd = `docker exec -it ${node.containerId} sh -c '${shellCmd}'`;
+    const appleScript = `tell application "Terminal"
+      do script "${dockerCmd.replace(/"/g, '\\"')}"
+      activate
+    end tell`;
+
+    try {
+      await new Promise<void>((resolve, reject) => {
+        execFile('osascript', ['-e', appleScript], (err) => err ? reject(err) : resolve());
       });
-
-
+    } catch (e) {
+      throw toUserError(e);
+    }
   });
 
   ipcMain.on(IPC_CHANNELS.TERMINAL_INPUT, (_e, terminalId: string, data: string) => {

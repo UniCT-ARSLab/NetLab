@@ -65,8 +65,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openTerminalWindow: (nodeId: string, nodeName: string) =>
     ipcRenderer.invoke(CH.TERMINAL_OPEN_WINDOW, nodeId, nodeName),
 
-  openTerminal: (nodeId: string, nodeName: string,cols: number, rows: number) =>
-    ipcRenderer.invoke(CH.TERMINAL_OPEN, nodeId, nodeName, cols, rows),
+  openTerminal: (nodeId: string, cols: number, rows: number) =>
+    ipcRenderer.invoke(CH.TERMINAL_OPEN, nodeId, cols, rows),
+  openTerminalNative: (nodeId: string) =>
+    ipcRenderer.invoke(CH.TERMINAL_OPEN_NATIVE, nodeId),
   sendInput: (terminalId: string, data: string) => ipcRenderer.send(CH.TERMINAL_INPUT, terminalId, data),
   resizeTerminal: (terminalId: string, cols: number, rows: number) => ipcRenderer.send(CH.TERMINAL_RESIZE, terminalId, cols, rows),
   closeTerminal: (terminalId: string) => ipcRenderer.send(CH.TERMINAL_CLOSE, terminalId),
