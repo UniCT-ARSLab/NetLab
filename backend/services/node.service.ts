@@ -15,7 +15,7 @@ const LABEL_NODE_NAME = 'netlab.node-name';
 // Alpine standard non include iproute2 (solo BusyBox ip, che non sa creare
 // interfacce). Questa immagine viene buildata in locale una volta sola.
 export const NETLAB_ALPINE_IMAGE = 'netlab-alpine:latest';
-const NETLAB_ALPINE_DOCKERFILE = 'FROM alpine:latest\nRUN apk add --no-cache iproute2\n';
+const NETLAB_ALPINE_DOCKERFILE = 'FROM alpine:latest\nRUN apk add --no-cache iproute2 iptables bridge-utils\n';
 
 let nodes = new Map<string, LabNode>();
 
