@@ -234,7 +234,6 @@ export const NodeService = {
       },
       HostConfig: {
         Privileged: true,
-        NetworkMode: 'none',
         Binds: (node.mounts ?? []).map(m => `${m.hostPath}:${m.containerPath}`),
         ...(node.cpuLimit ? { NanoCpus: Math.round(node.cpuLimit * 1e9) } : {}),
         ...(node.memoryMb ? { Memory: node.memoryMb * 1024 * 1024 } : {}),
@@ -242,6 +241,11 @@ export const NodeService = {
     });
 
     await container.start();
+
+    // Docker attaches the default bridge network only once the container
+    // actually starts, so the disconnect must happen after start, not before
+    // (disconnecting before start has nothing to disconnect and is a no-op).
+    try { await docker.getNetwork('bridge').disconnect({ Container: container.id }); } catch { /* ignore */ }
     node.containerId = container.id;
     node.status = 'running';
     persist();
