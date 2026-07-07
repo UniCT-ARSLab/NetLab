@@ -15,7 +15,7 @@ const LABEL_NODE_NAME = 'netlab.node-name';
 // Alpine standard non include iproute2 (solo BusyBox ip, che non sa creare
 // interfacce). Questa immagine viene buildata in locale una volta sola.
 export const NETLAB_ALPINE_IMAGE = 'netlab-alpine:latest';
-const NETLAB_ALPINE_DOCKERFILE = 'FROM debian:bookworm-slim\nRUN apt-get update && apt-get install -y --no-install-recommends iproute2 iptables bridge-utils && rm -rf /var/lib/apt/lists/*\n';
+const NETLAB_ALPINE_DOCKERFILE = 'FROM debian:bookworm-slim\nRUN apt-get update && apt-get install -y --no-install-recommends iproute2 iptables bridge-utils iputils-ping && rm -rf /var/lib/apt/lists/*\n';
 
 let nodes = new Map<string, LabNode>();
 
