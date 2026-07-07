@@ -47,7 +47,10 @@ async function ensureNetlabAlpineImage(): Promise<void> {
     logger.info(`[ensureNetlabAlpineImage] build completata: ${Buffer.concat(chunks).toString('utf8').slice(-800)}`);
   } catch (buildErr) {
     logger.error(`[ensureNetlabAlpineImage] BUILD FALLITA. Output: ${Buffer.concat(chunks).toString('utf8')}`, buildErr);
-    throw buildErr;
+    throw new Error(
+      "Impossibile costruire l'immagine netlab-alpine (apk add iproute2 fallito). " +
+      'Verifica la connessione internet e riprova.'
+    );
   } finally {
     fs.rmSync(contextPath, { recursive: true, force: true });
   }
