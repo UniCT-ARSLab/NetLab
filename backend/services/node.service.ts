@@ -26,16 +26,29 @@ function persist(): void {
 async function ensureNetlabAlpineImage(): Promise<void> {
   try {
     await docker.getImage(NETLAB_ALPINE_IMAGE).inspect();
+    logger.info('[ensureNetlabAlpineImage] già presente, skip build');
+    return;
   } catch {
-    const contextPath = fs.mkdtempSync(path.join(os.tmpdir(), 'netlab-alpine-'));
-    fs.writeFileSync(path.join(contextPath, 'Dockerfile'), NETLAB_ALPINE_DOCKERFILE);
+    logger.info('[ensureNetlabAlpineImage] non presente, avvio build...');
+  }
+
+  const contextPath = fs.mkdtempSync(path.join(os.tmpdir(), 'netlab-alpine-'));
+  fs.writeFileSync(path.join(contextPath, 'Dockerfile'), NETLAB_ALPINE_DOCKERFILE);
+  const chunks: Buffer[] = [];
+  try {
     const stream = await docker.buildImage(
       { context: contextPath, src: ['Dockerfile'] },
       { t: NETLAB_ALPINE_IMAGE }
     );
+    stream.on('data', (c: Buffer) => chunks.push(c));
     await new Promise<void>((resolve, reject) => {
       docker.modem.followProgress(stream, (err: Error | null) => err ? reject(err) : resolve());
     });
+    logger.info(`[ensureNetlabAlpineImage] build completata: ${Buffer.concat(chunks).toString('utf8').slice(-800)}`);
+  } catch (buildErr) {
+    logger.error(`[ensureNetlabAlpineImage] BUILD FALLITA. Output: ${Buffer.concat(chunks).toString('utf8')}`, buildErr);
+    throw buildErr;
+  } finally {
     fs.rmSync(contextPath, { recursive: true, force: true });
   }
 }

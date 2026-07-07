@@ -64,7 +64,7 @@ export class NodeFormComponent implements OnChanges {
   }
 
   readonly imageOptions = [
-    { label: 'alpine', value: 'netlab-alpine' },
+    { label: 'netlab-alpine', value: 'netlab-alpine' },
   ];
 
   name           = '';
