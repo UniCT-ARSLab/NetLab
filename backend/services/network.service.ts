@@ -344,9 +344,14 @@ export const NetworkService = {
     const networkName = `netlab_wan_${nodeId}`;
     try {
       const existing = await docker.listNetworks({ filters: { name: [networkName] } });
+      const node = NodeService.get(nodeId);
       for (const net of existing) {
         if (net.Name === networkName) {
-          try { await docker.getNetwork(net.Id).remove(); } catch { /* already removed */ }
+          const network = docker.getNetwork(net.Id);
+          if (node?.containerId) {
+            try { await network.disconnect({ Container: node.containerId, Force: true }); } catch { /* already disconnected */ }
+          }
+          try { await network.remove(); } catch { /* already removed */ }
         }
       }
     } catch { /* ignore */ }

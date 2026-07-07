@@ -230,6 +230,10 @@ export function registerIpcHandlers(_win: BrowserWindow): void {
   });
 
   ipcMain.handle(IPC_CHANNELS.NODE_UPDATE, async (_e, id: string, params: CreateNodeParams) => {
+    const existing = NodeService.get(id);
+    if (existing?.internetFacing && params.internetFacing === false) {
+      await NetworkService.deleteWanBridge(id);
+    }
     return NodeService.update(id, params);
   });
 
