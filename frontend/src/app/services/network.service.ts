@@ -17,9 +17,9 @@ export class NetworkService {
     );
   }
 
-  createLink(name: string): Observable<LabLink> {
+  createLink(name: string, type?: 'cable' | 'switch'): Observable<LabLink> {
     if (!this.api) return of({} as LabLink);
-    return from(this.api.createLink(name)).pipe(
+    return from(this.api.createLink(name, type)).pipe(
       tap((link) => this.linksSubject.next([...this.linksSubject.value, link]))
     );
   }

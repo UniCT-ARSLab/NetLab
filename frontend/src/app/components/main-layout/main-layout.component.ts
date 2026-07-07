@@ -221,10 +221,10 @@ export class MainLayoutComponent implements OnInit {
     this.topologyView?.resetLayout();
   }
 
-  createLink(name: string): void {
-    this.networkService.createLink(name).subscribe({
+  createLink(event: { name: string; type: 'cable' | 'switch' }): void {
+    this.networkService.createLink(event.name, event.type).subscribe({
       next: () => {
-        this.messageService.add({ severity: 'success', summary: `Link "${name}"${this.t('links.created-suffix')}`, life: 3000 });
+        this.messageService.add({ severity: 'success', summary: `Link "${event.name}"${this.t('links.created-suffix')}`, life: 3000 });
       },
       error: (e: Error) => this.showError(e),
     });

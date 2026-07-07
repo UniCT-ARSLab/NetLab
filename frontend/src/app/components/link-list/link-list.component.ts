@@ -16,7 +16,7 @@ import { LabLink } from '../../../../../backend/models/link.model';
   templateUrl: './link-list.component.html',
 })
 export class LinkListComponent {
-  @Output() createLink = new EventEmitter<string>();
+  @Output() createLink = new EventEmitter<{ name: string; type: 'cable' | 'switch' }>();
   @Output() deleteLink = new EventEmitter<string>();
 
   private networkService = inject(NetworkService);
@@ -24,16 +24,18 @@ export class LinkListComponent {
 
   showCreateInput = false;
   newLinkName = '';
+  newLinkType: 'cable' | 'switch' = 'cable';
 
   toggleCreate(): void {
     this.showCreateInput = !this.showCreateInput;
     this.newLinkName = '';
+    this.newLinkType = 'cable';
   }
 
   submitCreate(): void {
     const name = this.newLinkName.trim();
     if (!name) return;
-    this.createLink.emit(name);
+    this.createLink.emit({ name, type: this.newLinkType });
     this.newLinkName = '';
     this.showCreateInput = false;
   }

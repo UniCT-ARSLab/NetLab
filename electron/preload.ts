@@ -52,7 +52,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // LINK 
   listLinks: ()  => ipcRenderer.invoke(CH.LINK_LIST),
-  createLink: (name: string) => ipcRenderer.invoke(CH.LINK_CREATE, name),
+  createLink: (name: string, type?: 'cable' | 'switch') => ipcRenderer.invoke(CH.LINK_CREATE, name, type),
   deleteLink: (name: string) => ipcRenderer.invoke(CH.LINK_DELETE, name),
 
   // TERMINALE

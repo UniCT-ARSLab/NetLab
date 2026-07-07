@@ -5,7 +5,7 @@ import { docker } from './docker.client';
 import { DbService } from './db.service';
 import { NodeService } from './node.service';
 import { logger } from '../../electron/logger';
-import { LabLink } from '../models/link.model';
+import { LabLink, LabLinkType } from '../models/link.model';
 
 const NSENTER_HELPER_IMAGE = 'netlab-nsenter-helper:latest';
 const NSENTER_HELPER_DOCKERFILE = 'FROM alpine:3.20\nRUN apk add --no-cache util-linux\nENTRYPOINT ["nsenter"]\n';
@@ -56,7 +56,7 @@ export const NetworkService = {
     for (const net of netlabNets) {
       const linkName = net.Name!.slice('netlab_'.length);
       if (!links.has(linkName)) {
-        links.set(linkName, { name: linkName, dockerNetworkId: net.Id, connectedNodes: [] });
+        links.set(linkName, { name: linkName, type: 'cable', dockerNetworkId: net.Id, connectedNodes: [] });
         changed = true;
       } else {
         const existing = links.get(linkName)!;
@@ -92,7 +92,7 @@ export const NetworkService = {
     }));
   },
 
-  async createLink(name: string): Promise<LabLink> {
+  async createLink(name: string, type: LabLinkType = 'cable'): Promise<LabLink> {
     if (links.has(name)) throw new Error(`Link "${name}" già esistente`);
 
     const network = await docker.createNetwork({
@@ -105,7 +105,7 @@ export const NetworkService = {
       IPAM: { Driver: 'default', Config: [] },
     });
 
-    const link: LabLink = { name, dockerNetworkId: network.id, connectedNodes: [] };
+    const link: LabLink = { name, type, dockerNetworkId: network.id, connectedNodes: [] };
     links.set(name, link);
     persist();
     return link;
@@ -183,7 +183,8 @@ export const NetworkService = {
 
     if (!alreadyConnected) {
       const othersConnected = Object.keys(netInfo.Containers ?? {}).length;
-      if (othersConnected >= 2) {
+      const maxNodes = link.type === 'switch' ? Infinity : 2;
+      if (othersConnected >= maxNodes) {
         throw new Error(`Link "${linkName}" is already at capacity (max 2 nodes)`);
       }
       try {

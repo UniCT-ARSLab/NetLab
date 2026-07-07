@@ -1,5 +1,8 @@
+export type LabLinkType = 'cable' | 'switch';
+
 export interface LabLink {
-  name: string;           
+  name: string;
+  type: LabLinkType;
   dockerNetworkId?: string;
   connectedNodes: string[];
 }
