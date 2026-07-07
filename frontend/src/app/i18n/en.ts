@@ -11,6 +11,7 @@ export const en: Record<string, string> = {
   'btn.add-interface': 'Add interface',
   'btn.add-folder': 'Add shared folder',
   'btn.change-folder': 'Change folder',
+  'btn.refresh-topology': 'Refresh topology layout',
 
   'docker.checking.title': 'Starting…',
   'docker.checking.body': 'Checking Docker availability.',

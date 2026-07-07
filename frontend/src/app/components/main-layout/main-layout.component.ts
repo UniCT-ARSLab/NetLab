@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed, inject, effect, untracked } from '@angular/core';
+import { Component, OnInit, ViewChild, signal, computed, inject, effect, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -9,6 +9,7 @@ import { Button } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
 import { Divider } from 'primeng/divider';
 import { Tag } from 'primeng/tag';
+import { TooltipModule } from 'primeng/tooltip';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { TranslateService, TranslatePipe } from '@ngx-translate/core';
 import { ToolbarComponent } from '../toolbar/toolbar.component';
@@ -31,7 +32,7 @@ interface NetworkInfo { addr: AddrRow[]; routes: RouteRow[]; }
     CommonModule, FormsModule,
     ToolbarComponent, NodeListComponent, NodeFormComponent, TopologyViewComponent,
     Toast, Dialog, ConfirmDialog, Button, InputText, Divider, Tag,
-    TranslatePipe,
+    TooltipModule, TranslatePipe,
   ],
   providers: [ConfirmationService],
   styleUrl: './main-layout.component.css',
@@ -39,6 +40,8 @@ interface NetworkInfo { addr: AddrRow[]; routes: RouteRow[]; }
 })
 
 export class MainLayoutComponent implements OnInit {
+  @ViewChild(TopologyViewComponent) topologyView?: TopologyViewComponent;
+
   private networkService      = inject(NetworkService);
   private nodeService         = inject(NodeService);
   private messageService      = inject(MessageService);
@@ -216,6 +219,10 @@ export class MainLayoutComponent implements OnInit {
       return;
     }
     window.electronAPI.openTerminalNative(node.id).catch((e: Error) => this.showError(e));
+  }
+
+  refreshTopology(): void {
+    this.topologyView?.resetLayout();
   }
 
   openLinkDialog(): void { this.showLinkDialog = true; this.newLinkName = ''; }

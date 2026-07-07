@@ -100,6 +100,14 @@ export class TopologyViewComponent implements OnChanges, AfterViewInit, OnDestro
     }
   }
 
+  // Ricalcola il layout da zero, come al primo caricamento della topologia.
+  resetLayout(): void {
+    this.hasCentered   = false;
+    this.hasManualDrag = false;
+    this.nodeOverrides.clear();
+    this.centerView();
+  }
+
   private centerView(): void {
     if (this.hasCentered || !this.nodes.length) return;
     const rect = this.svgEl.getBoundingClientRect();

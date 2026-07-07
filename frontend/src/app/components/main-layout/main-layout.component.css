@@ -141,6 +141,13 @@
   pointer-events: none;
 }
 
+.canvas-topology__refresh {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 5;
+}
+
 .canvas-card {
   position: absolute;
   inset: 0;

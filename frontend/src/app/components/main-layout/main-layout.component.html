@@ -54,6 +54,10 @@
         <!-- Topology panel (always mounted to preserve pan/zoom state) -->
         <div class="canvas-topology">
           @if (nodes().length > 0) {
+            <p-button icon="pi pi-refresh" [text]="true" size="small"
+              class="canvas-topology__refresh"
+              [pTooltip]="'btn.refresh-topology' | translate"
+              (onClick)="refreshTopology()" />
             <app-topology-view
               [nodes]="nodes()"
               [links]="links()"
