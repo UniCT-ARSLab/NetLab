@@ -13,6 +13,7 @@ const CH = {
   LINK_CREATE:          'link:create',
   LINK_DELETE:          'link:delete',
   TERMINAL_OPEN:        'terminal:open',
+  TERMINAL_OPEN_NATIVE: 'terminal:open-native',
   TERMINAL_OPEN_WINDOW: 'terminal:open-window',
   TERMINAL_INPUT:       'terminal:input',
   TERMINAL_OUTPUT:      'terminal:output',
