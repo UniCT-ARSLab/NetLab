@@ -99,6 +99,7 @@ export const NetworkService = {
       Name: `netlab_${name}`,
       Driver: 'bridge',
       Options: {
+        'com.docker.network.bridge.default_bridge': 'true',
         'com.docker.network.bridge.enable_icc': 'true',
         'com.docker.network.bridge.enable_ip_masquerade': 'false',
       },
