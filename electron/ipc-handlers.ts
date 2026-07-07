@@ -127,6 +127,7 @@ function parseRouteSection(raw: string): RouteRow[] {
 function toUserError(e: unknown): Error {
   const msg = (e instanceof Error ? e.message : String(e)).toLowerCase();
   const code = (e as Record<string, unknown>)?.['statusCode'] as number | undefined;
+  logger.error('[toUserError] raw:', e);
 
   if (msg.includes('enoent') || msg.includes('econnrefused') ||
       msg.includes('docker.sock') || msg.includes('pipe/docker_engine')) {
