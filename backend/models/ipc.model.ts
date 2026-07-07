@@ -24,14 +24,7 @@ export const IPC_CHANNELS = {
   LINK_LIST:    'link:list',
 
   // Terminale
-  TERMINAL_OPEN:        'terminal:open',
-  TERMINAL_OPEN_WINDOW: 'terminal:open-window',
   TERMINAL_OPEN_NATIVE: 'terminal:open-native',
-  TERMINAL_INPUT:       'terminal:input',
-  TERMINAL_OUTPUT:      'terminal:output',
-  TERMINAL_RESIZE:      'terminal:resize',
-  TERMINAL_CLOSE:       'terminal:close',
-  TERMINAL_STOPPING:    'terminal:stopping',
 
   // Dialog
   DIALOG_OPEN_FOLDER: 'dialog:open-folder',

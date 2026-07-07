@@ -52,7 +52,9 @@ async function createWindow(): Promise<void> {
     return;
   }
 
-  await NetworkService.ensureFallbackTunnelsDisabled();
+  // Fire-and-forget: gira in background, i chiamanti che ne hanno davvero
+  // bisogno (creazione container) aspettano la stessa promise cachata.
+  NetworkService.ensureFallbackTunnelsDisabled();
 
   // riconciliazione db/docker
   Promise.all([

@@ -12,14 +12,7 @@ const CH = {
   LINK_LIST:            'link:list',
   LINK_CREATE:          'link:create',
   LINK_DELETE:          'link:delete',
-  TERMINAL_OPEN:        'terminal:open',
   TERMINAL_OPEN_NATIVE: 'terminal:open-native',
-  TERMINAL_OPEN_WINDOW: 'terminal:open-window',
-  TERMINAL_INPUT:       'terminal:input',
-  TERMINAL_OUTPUT:      'terminal:output',
-  TERMINAL_RESIZE:      'terminal:resize',
-  TERMINAL_CLOSE:       'terminal:close',
-  TERMINAL_STOPPING:    'terminal:stopping',
   DOCKER_CHECK:         'docker:check',
   DOCKER_UNAVAILABLE:   'docker:unavailable',
   DATA_READY:           'data:ready',
@@ -62,27 +55,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   createLink: (name: string) => ipcRenderer.invoke(CH.LINK_CREATE, name),
   deleteLink: (name: string) => ipcRenderer.invoke(CH.LINK_DELETE, name),
 
-  // TERMINALE 
-  openTerminalWindow: (nodeId: string, nodeName: string) =>
-    ipcRenderer.invoke(CH.TERMINAL_OPEN_WINDOW, nodeId, nodeName),
-
-  openTerminal: (nodeId: string, cols: number, rows: number) =>
-    ipcRenderer.invoke(CH.TERMINAL_OPEN, nodeId, cols, rows),
+  // TERMINALE
   openTerminalNative: (nodeId: string) =>
     ipcRenderer.invoke(CH.TERMINAL_OPEN_NATIVE, nodeId),
-  sendInput: (terminalId: string, data: string) => ipcRenderer.send(CH.TERMINAL_INPUT, terminalId, data),
-  resizeTerminal: (terminalId: string, cols: number, rows: number) => ipcRenderer.send(CH.TERMINAL_RESIZE, terminalId, cols, rows),
-  closeTerminal: (terminalId: string) => ipcRenderer.send(CH.TERMINAL_CLOSE, terminalId),
-
-  onTerminalOutput: (cb: (terminalId: string, data: string) => void) => {
-    ipcRenderer.on(CH.TERMINAL_OUTPUT, (_e, payload) => cb(payload.terminalId, payload.data));
-  },
-  onTerminalClosed: (cb: (terminalId: string) => void) => {
-    ipcRenderer.on(CH.TERMINAL_CLOSE, (_e, payload) => cb(payload.terminalId));
-  },
-  onTerminalStopping: (cb: (terminalId: string) => void) => {
-    ipcRenderer.on(CH.TERMINAL_STOPPING, (_e, payload) => cb(payload.terminalId));
-  },
 
   openFolderDialog: (): Promise<string | null> =>
     ipcRenderer.invoke(CH.DIALOG_OPEN_FOLDER),

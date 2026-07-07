@@ -215,11 +215,7 @@ export class MainLayoutComponent implements OnInit {
       this.messageService.add({ severity: 'warn', summary: this.t('node.only-electron'), life: 3000 });
       return;
     }
-    if (window.electronAPI.platform === 'darwin') {
-      window.electronAPI.openTerminalNative(node.id).catch((e: Error) => this.showError(e));
-    } else {
-      window.electronAPI.openTerminalWindow(node.id, node.name);
-    }
+    window.electronAPI.openTerminalNative(node.id).catch((e: Error) => this.showError(e));
   }
 
   openLinkDialog(): void { this.showLinkDialog = true; this.newLinkName = ''; }

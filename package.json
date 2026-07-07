@@ -15,12 +15,10 @@
     "package": "npm install && cd frontend && npm install && cd .. && npm run build:all && electron-builder",
     "package:win": "npm install && cd frontend && npm install && cd .. && npm run build:all && electron-builder --win",
     "package:mac": "npm install && cd frontend && npm install && cd .. && npm run build:all && electron-builder --mac",
-    "package:linux": "npm install && cd frontend && npm install && cd .. && npm run build:all && electron-builder --linux",
-    "postinstall": "node scripts/fix-pty-permissions.js"
+    "package:linux": "npm install && cd frontend && npm install && cd .. && npm run build:all && electron-builder --linux"
   },
   "dependencies": {
     "dockerode": "^4.0.2",
-    "node-pty": "^1.1.0",
     "uuid": "^10.0.0"
   },
   "devDependencies": {
@@ -44,10 +42,6 @@
       "dist/**/*",
       "package.json"
     ],
-    "asarUnpack": [
-      "**/node_modules/node-pty/**"
-    ],
-    "afterPack": "scripts/afterPack.js",
     "npmRebuild": false,
     "nsis": {
       "oneClick": false,

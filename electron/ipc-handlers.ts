@@ -1,12 +1,61 @@
 import { ipcMain, BrowserWindow, app, dialog, screen } from 'electron';
 import * as path from 'path';
-import { execFile } from 'child_process';
+import { execFile, execFileSync, spawn } from 'child_process';
 import { IPC_CHANNELS, CreateNodeParams } from '../backend/models/ipc.model';
 import { NodeService } from '../backend/services/node.service';
 import { NetworkService } from '../backend/services/network.service';
-import { TerminalService } from '../backend/services/terminal.service';
 import { docker, isDockerAvailable } from '../backend/services/docker.client';
 import { logger } from './logger';
+
+function buildDockerExecCommand(containerId: string): string {
+  const shellCmd = `command -v bash > /dev/null 2>&1 && exec bash || exec sh`;
+  return `docker exec -it ${containerId} sh -c '${shellCmd}'`;
+}
+
+function commandExists(cmd: string): boolean {
+  try {
+    execFileSync(process.platform === 'win32' ? 'where' : 'which', [cmd], { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Apre il terminale nativo del sistema operativo collegato al container.
+// Nessun controllo sulla sessione una volta lanciata: è un processo
+// indipendente dall'app, esattamente come aprirlo a mano.
+async function openNativeTerminal(containerId: string): Promise<void> {
+  const dockerCmd = buildDockerExecCommand(containerId);
+
+  if (process.platform === 'darwin') {
+    const appleScript = `tell application "Terminal"
+      do script "${dockerCmd.replace(/"/g, '\\"')}"
+      activate
+    end tell`;
+    await new Promise<void>((resolve, reject) => {
+      execFile('osascript', ['-e', appleScript], (err) => err ? reject(err) : resolve());
+    });
+    return;
+  }
+
+  if (process.platform === 'win32') {
+    await new Promise<void>((resolve, reject) => {
+      execFile('cmd.exe', ['/c', 'start', '""', 'cmd', '/k', dockerCmd], (err) => err ? reject(err) : resolve());
+    });
+    return;
+  }
+
+  const linuxTerminals: Array<{ cmd: string; args: string[] }> = [
+    { cmd: 'x-terminal-emulator', args: ['-e', dockerCmd] },
+    { cmd: 'gnome-terminal', args: ['--', 'sh', '-c', dockerCmd] },
+    { cmd: 'konsole', args: ['-e', dockerCmd] },
+    { cmd: 'xfce4-terminal', args: ['-e', dockerCmd] },
+    { cmd: 'xterm', args: ['-e', dockerCmd] },
+  ];
+  const found = linuxTerminals.find(t => commandExists(t.cmd));
+  if (!found) throw new Error('Nessun emulatore di terminale trovato sul sistema.');
+  spawn(found.cmd, found.args, { detached: true, stdio: 'ignore' }).unref();
+}
 
 // Docker exec streams are multiplexed: each frame has an 8-byte header
 // (1 byte type, 3 bytes padding, 4 bytes payload length) followed by the payload.
@@ -165,11 +214,7 @@ export function registerIpcHandlers(_win: BrowserWindow): void {
 
   // DOCKER
 
-  ipcMain.handle('docker:check', async () => {
-    const available = await isDockerAvailable();
-    if (available) await NetworkService.ensureFallbackTunnelsDisabled();
-    return available;
-  });
+  ipcMain.handle('docker:check', async () => isDockerAvailable());
 
   // NODI 
 
@@ -187,6 +232,7 @@ export function registerIpcHandlers(_win: BrowserWindow): void {
 
   ipcMain.handle(IPC_CHANNELS.NODE_START, async (_e, id: string) => {
     try {
+      await NetworkService.ensureFallbackTunnelsDisabled();
       const node = await NodeService.start(id);
 
       for (const iface of node.interfaces) {
@@ -226,9 +272,7 @@ export function registerIpcHandlers(_win: BrowserWindow): void {
 
   ipcMain.handle(IPC_CHANNELS.NODE_STOP, async (_e, id: string) => {
     try {
-      TerminalService.notifyStopping(`term_${id}`);
       const result = await NodeService.stop(id);
-      TerminalService.close(`term_${id}`);
       return result;
     } catch (e) {
       throw toUserError(e);
@@ -237,7 +281,6 @@ export function registerIpcHandlers(_win: BrowserWindow): void {
 
   ipcMain.handle(IPC_CHANNELS.NODE_DELETE, async (_e, id: string) => {
     try {
-      TerminalService.close(`term_${id}`);
       const node = NodeService.get(id);
       if (node?.internetFacing) {
         await NetworkService.deleteWanBridge(id);
@@ -291,51 +334,19 @@ export function registerIpcHandlers(_win: BrowserWindow): void {
 
   //TERMINALE
 
-  ipcMain.handle(IPC_CHANNELS.TERMINAL_OPEN, async (_e, nodeId: string, cols: number, rows: number) => {
-    const senderWin = BrowserWindow.fromWebContents(_e.sender);
-    if (!senderWin) throw new Error('Finestra sorgente non trovata');
-    try {
-      return TerminalService.open(nodeId, senderWin, cols, rows);
-    } catch (e) {
-      throw toUserError(e);
-    }
-  });
-
-  // Apre Terminal.app (macOS) collegato al container con `docker exec`.
+  // Apre il terminale nativo del sistema operativo, collegato al container
+  // con `docker exec`. Nessuna sessione PTY gestita dall'app: una volta
+  // lanciato, il terminale è un processo del tutto indipendente.
   ipcMain.handle(IPC_CHANNELS.TERMINAL_OPEN_NATIVE, async (_e, nodeId: string) => {
-    if (process.platform !== 'darwin') {
-      throw new Error('Terminale nativo disponibile solo su macOS');
-    }
     const node = NodeService.get(nodeId);
     if (!node?.containerId) throw new Error(`Nodo ${nodeId} non trovato o non avviato`);
     if (node.status !== 'running') throw new Error(`Il nodo "${node.name}" non è in esecuzione`);
 
-    const shellCmd = `command -v bash > /dev/null 2>&1 && exec bash || exec sh`;
-    const dockerCmd = `docker exec -it ${node.containerId} sh -c '${shellCmd}'`;
-    const appleScript = `tell application "Terminal"
-      do script "${dockerCmd.replace(/"/g, '\\"')}"
-      activate
-    end tell`;
-
     try {
-      await new Promise<void>((resolve, reject) => {
-        execFile('osascript', ['-e', appleScript], (err) => err ? reject(err) : resolve());
-      });
+      await openNativeTerminal(node.containerId);
     } catch (e) {
       throw toUserError(e);
     }
-  });
-
-  ipcMain.on(IPC_CHANNELS.TERMINAL_INPUT, (_e, terminalId: string, data: string) => {
-    TerminalService.write(terminalId, data);
-  });
-
-  ipcMain.on(IPC_CHANNELS.TERMINAL_RESIZE, (_e, terminalId: string, cols: number, rows: number) => {
-    TerminalService.resize(terminalId, cols, rows);
-  });
-
-  ipcMain.on(IPC_CHANNELS.TERMINAL_CLOSE, (_e, terminalId: string) => {
-    TerminalService.close(terminalId);
   });
 
   // DIALOG
@@ -348,39 +359,5 @@ export function registerIpcHandlers(_win: BrowserWindow): void {
     });
     if (result.canceled || result.filePaths.length === 0) return null;
     return result.filePaths[0];
-  });
-
-  // FINESTRA TERMINALE
-
-  ipcMain.handle(IPC_CHANNELS.TERMINAL_OPEN_WINDOW, async (_e, nodeId: string, _nodeName: string) => {
-    const node = NodeService.get(nodeId);
-    if (!node) throw new Error(`Nodo ${nodeId} non trovato`);
-    if (node.status !== 'running') throw new Error(`Il nodo "${node.name}" non è in esecuzione`);
-
-    const termWin = new BrowserWindow({
-      width: 900,
-      height: 600,
-      title: `Terminal — ${node.name}`,
-      ...(process.platform === 'darwin'
-        ? { titleBarStyle: 'hidden' as const, trafficLightPosition: { x: 10, y: 11 } }
-        : {
-            frame: false,
-          }),
-      webPreferences: {
-        preload: path.join(__dirname, 'preload.js'),
-        contextIsolation: true,
-        nodeIntegration: false,
-      },
-    });
-
-    const query = new URLSearchParams({ nodeId, nodeName: node.name });
-
-    if (!app.isPackaged) {
-      await termWin.loadURL(`http://localhost:4200/#/terminal?${query.toString()}`);
-    } else {
-      await termWin.loadFile(path.join(__dirname, '../frontend/browser/index.html'), {
-        hash: `/terminal?${query.toString()}`,
-      });
-    }
   });
 }

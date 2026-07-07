@@ -33,20 +33,8 @@ declare global {
       createLink: (name: string) => Promise<LabLink>;
       deleteLink: (name: string) => Promise<void>;
 
-      // Terminale - finestra separata
-      openTerminalWindow: (nodeId: string, nodeName: string) => Promise<void>;
-
-      // Terminale - Terminal.app nativo (macOS)
+      // Terminale - terminale nativo del sistema operativo
       openTerminalNative: (nodeId: string) => Promise<void>;
-
-      // Terminale - sessione PTY
-      openTerminal: (nodeId: string, cols: number, rows: number) => Promise<string>;
-      sendInput: (terminalId: string, data: string) => void;
-      resizeTerminal: (terminalId: string, cols: number, rows: number) => void;
-      closeTerminal: (terminalId: string) => void;
-      onTerminalOutput: (cb: (terminalId: string, data: string) => void) => void;
-      onTerminalClosed: (cb: (terminalId: string) => void) => void;
-      onTerminalStopping: (cb: (terminalId: string) => void) => void;
 
       // Dialog
       openFolderDialog: () => Promise<string | null>;
