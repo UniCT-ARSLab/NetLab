@@ -23,7 +23,6 @@ export class ToolbarComponent implements OnInit {
   @Output() startClicked   = new EventEmitter<void>();
   @Output() stopClicked    = new EventEmitter<void>();
   @Output() attachClicked  = new EventEmitter<void>();
-  @Output() linksClicked   = new EventEmitter<void>();
 
   private translate = inject(TranslateService);
 

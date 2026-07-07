@@ -56,13 +56,11 @@ export const en: Record<string, string> = {
   'form.wan-badge':              'WAN · Internet',
   'form.internet-facing-hint':   'eth_wan gets an IP automatically (like an ISP uplink). You still configure: ip_forward, iptables MASQUERADE on eth_wan, and the default route on connected nodes.',
 
-  'links.title': 'Manage Links',
-  'links.hint': 'A link is a collision domain (isolated Docker bridge). Nodes connected to the same link communicate at layer 2; IPs are configured manually from within the container.',
+  'links.title': 'Links',
+  'links.empty': 'No links',
   'links.node': 'node',
   'links.nodes': 'nodes',
-  'links.new-link': 'New link',
   'links.placeholder': 'e.g. linkA',
-  'links.create': 'Create',
   'links.created-suffix': ' created',
   'links.deleted-suffix': ' deleted',
 

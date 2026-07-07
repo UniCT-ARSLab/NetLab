@@ -3,17 +3,15 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Toast } from 'primeng/toast';
-import { Dialog } from 'primeng/dialog';
 import { ConfirmDialog } from 'primeng/confirmdialog';
 import { Button } from 'primeng/button';
-import { InputText } from 'primeng/inputtext';
-import { Divider } from 'primeng/divider';
 import { Tag } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { TranslateService, TranslatePipe } from '@ngx-translate/core';
 import { ToolbarComponent } from '../toolbar/toolbar.component';
 import { NodeListComponent } from '../node-list/node-list.component';
+import { LinkListComponent } from '../link-list/link-list.component';
 import { NodeFormComponent } from '../node-form/node-form.component';
 import { TopologyViewComponent } from '../topology-view/topology-view.component';
 import { LabNode, NodeStatus } from '../../../../../backend/models/node.model';
@@ -30,8 +28,8 @@ interface NetworkInfo { addr: AddrRow[]; routes: RouteRow[]; }
   standalone: true,
   imports: [
     CommonModule, FormsModule,
-    ToolbarComponent, NodeListComponent, NodeFormComponent, TopologyViewComponent,
-    Toast, Dialog, ConfirmDialog, Button, InputText, Divider, Tag,
+    ToolbarComponent, NodeListComponent, LinkListComponent, NodeFormComponent, TopologyViewComponent,
+    Toast, ConfirmDialog, Button, Tag,
     TooltipModule, TranslatePipe,
   ],
   providers: [ConfirmationService],
@@ -50,8 +48,6 @@ export class MainLayoutComponent implements OnInit {
 
   showCreateDialog = false;
   showEditDialog   = false;
-  showLinkDialog   = false;
-  newLinkName = '';
 
   readonly isElectron = !!window.electronAPI;
 
@@ -225,15 +221,10 @@ export class MainLayoutComponent implements OnInit {
     this.topologyView?.resetLayout();
   }
 
-  openLinkDialog(): void { this.showLinkDialog = true; this.newLinkName = ''; }
-
-  createLink(): void {
-    const name = this.newLinkName.trim();
-    if (!name) return;
+  createLink(name: string): void {
     this.networkService.createLink(name).subscribe({
       next: () => {
         this.messageService.add({ severity: 'success', summary: `Link "${name}"${this.t('links.created-suffix')}`, life: 3000 });
-        this.newLinkName = '';
       },
       error: (e: Error) => this.showError(e),
     });

@@ -44,10 +44,6 @@
 
   <ng-template #end>
     <div class="toolbar-actions">
-      <p-button label="Links" icon="pi pi-sitemap" size="small"
-        severity="secondary" [outlined]="true"
-        (onClick)="linksClicked.emit()" />
-      <p-divider layout="vertical" />
       <button class="lang-toggle" (click)="switchLang()">
         <i class="pi pi-globe"></i>
         {{ lang().toUpperCase() }}

@@ -1,0 +1,40 @@
+<div class="sidebar-header">
+  <span class="sidebar-title">{{ 'links.title' | translate }}</span>
+  @if (links().length > 0) {
+    <span class="sidebar-count">{{ links().length }}</span>
+  }
+  <p-button icon="pi pi-plus" [text]="true" size="small"
+    class="sidebar-header__add"
+    (onClick)="toggleCreate()" />
+</div>
+
+@if (showCreateInput) {
+  <div class="link-create-row">
+    <input pInputText [(ngModel)]="newLinkName" [placeholder]="'links.placeholder' | translate"
+      (keyup.enter)="submitCreate()" class="link-create-input" />
+    <p-button icon="pi pi-check" [text]="true" size="small"
+      [disabled]="!newLinkName.trim()" (onClick)="submitCreate()" />
+  </div>
+}
+
+@if (links().length === 0) {
+  <div class="sidebar-empty">
+    <i class="pi pi-share-alt"></i>
+    <span>{{ 'links.empty' | translate }}</span>
+  </div>
+} @else {
+  <div class="link-list">
+    @for (link of links(); track link.name) {
+      <div class="link-row">
+        <i class="pi pi-share-alt link-row__icon"></i>
+        <span class="link-row__name">{{ link.name }}</span>
+        <span class="link-row__nodes">
+          {{ link.connectedNodes.length }}
+          {{ (link.connectedNodes.length === 1 ? 'links.node' : 'links.nodes') | translate }}
+        </span>
+        <p-button icon="pi pi-trash" severity="danger" [text]="true"
+          size="small" (onClick)="deleteLink.emit(link.name)" />
+      </div>
+    }
+  </div>
+}
