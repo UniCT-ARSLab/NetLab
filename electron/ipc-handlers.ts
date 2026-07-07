@@ -41,8 +41,10 @@ async function openNativeTerminal(containerId: string, nodeName: string): Promis
 
   if (process.platform === 'win32') {
     const titledCmd = `title ${nodeName} && ${dockerCmd}`;
+    // `start`'s first quoted argument is always taken as the window title —
+    // without literal quotes around it, it tries to run it as a program instead.
     await new Promise<void>((resolve, reject) => {
-      execFile('cmd.exe', ['/c', 'start', nodeName, 'cmd', '/k', titledCmd], (err) => err ? reject(err) : resolve());
+      execFile('cmd.exe', ['/c', 'start', `"${nodeName}"`, 'cmd', '/k', titledCmd], (err) => err ? reject(err) : resolve());
     });
     return;
   }
