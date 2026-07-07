@@ -15,7 +15,7 @@ const LABEL_NODE_NAME = 'netlab.node-name';
 // Alpine standard non include iproute2 (solo BusyBox ip, che non sa creare
 // interfacce). Questa immagine viene buildata in locale una volta sola.
 export const NETLAB_ALPINE_IMAGE = 'netlab-alpine:latest';
-const NETLAB_ALPINE_DOCKERFILE = 'FROM alpine:latest\nRUN apk add --no-cache iproute2 iptables bridge-utils\n';
+const NETLAB_ALPINE_DOCKERFILE = 'FROM debian:bookworm-slim\nRUN apt-get update && apt-get install -y --no-install-recommends iproute2 iptables bridge-utils && rm -rf /var/lib/apt/lists/*\n';
 
 let nodes = new Map<string, LabNode>();
 
@@ -23,7 +23,21 @@ function persist(): void {
   DbService.persistNodes(Array.from(nodes.values()));
 }
 
-async function ensureNetlabAlpineImage(): Promise<void> {
+let netlabAlpineImagePromise: Promise<void> | null = null;
+
+// Cached so concurrent node starts (e.g. several nodes launched together)
+// share the same in-flight build instead of racing separate ones.
+function ensureNetlabAlpineImage(): Promise<void> {
+  if (!netlabAlpineImagePromise) {
+    netlabAlpineImagePromise = buildNetlabAlpineImage().catch(e => {
+      netlabAlpineImagePromise = null;
+      throw e;
+    });
+  }
+  return netlabAlpineImagePromise;
+}
+
+async function buildNetlabAlpineImage(): Promise<void> {
   try {
     await docker.getImage(NETLAB_ALPINE_IMAGE).inspect();
     logger.info('[ensureNetlabAlpineImage] già presente, skip build');
@@ -48,7 +62,7 @@ async function ensureNetlabAlpineImage(): Promise<void> {
   } catch (buildErr) {
     logger.error(`[ensureNetlabAlpineImage] BUILD FALLITA. Output: ${Buffer.concat(chunks).toString('utf8')}`, buildErr);
     throw new Error(
-      "Impossibile costruire l'immagine netlab-alpine (apk add iproute2 fallito). " +
+      "Impossibile costruire l'immagine netlab-alpine. " +
       'Verifica la connessione internet e riprova.'
     );
   } finally {
