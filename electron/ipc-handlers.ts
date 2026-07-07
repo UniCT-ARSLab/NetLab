@@ -52,7 +52,16 @@ async function openNativeTerminal(containerId: string, nodeName: string): Promis
     const batPath = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'netlab-term-')), 'open.bat');
     fs.writeFileSync(batPath, `@title ${nodeName}\r\n${dockerCmd}\r\n`);
     await new Promise<void>((resolve, reject) => {
-      execFile('cmd.exe', ['/c', 'start', `"${nodeName}"`, 'cmd', '/k', `"${batPath}"`], (err) => err ? reject(err) : resolve());
+      // windowsVerbatimArguments: Node would otherwise add its own quoting on
+      // top of the literal quotes we already embedded, doubling them up into
+      // an invalid path (cmd.exe's own quoting rules don't match Node's
+      // normal escaping assumptions for other programs).
+      execFile(
+        'cmd.exe',
+        ['/c', 'start', `"${nodeName}"`, 'cmd', '/k', `"${batPath}"`],
+        { windowsVerbatimArguments: true },
+        (err) => err ? reject(err) : resolve()
+      );
     });
     return;
   }
