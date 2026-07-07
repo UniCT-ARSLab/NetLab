@@ -1,6 +1,3 @@
-import * as fs from 'fs';
-import * as os from 'os';
-import * as path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { docker } from './docker.client';
 import { DbService } from './db.service';
@@ -12,69 +9,13 @@ const LABEL_MANAGED  = 'netlab.managed';
 const LABEL_NODE_ID  = 'netlab.node-id';
 const LABEL_NODE_NAME = 'netlab.node-name';
 
-// Alpine standard non include iproute2 (solo BusyBox ip, che non sa creare
-// interfacce). Questa immagine viene buildata in locale una volta sola.
-export const NETLAB_ALPINE_IMAGE = 'netlab-alpine:latest';
-const NETLAB_ALPINE_DOCKERFILE = 'FROM debian:bookworm-slim\nRUN apt-get update && apt-get install -y --no-install-recommends iproute2 iptables bridge-utils iputils-ping && rm -rf /var/lib/apt/lists/*\n';
-
 let nodes = new Map<string, LabNode>();
 
 function persist(): void {
   DbService.persistNodes(Array.from(nodes.values()));
 }
 
-let netlabAlpineImagePromise: Promise<void> | null = null;
-
-// Cached so concurrent node starts (e.g. several nodes launched together)
-// share the same in-flight build instead of racing separate ones.
-function ensureNetlabAlpineImage(): Promise<void> {
-  if (!netlabAlpineImagePromise) {
-    netlabAlpineImagePromise = buildNetlabAlpineImage().catch(e => {
-      netlabAlpineImagePromise = null;
-      throw e;
-    });
-  }
-  return netlabAlpineImagePromise;
-}
-
-async function buildNetlabAlpineImage(): Promise<void> {
-  try {
-    await docker.getImage(NETLAB_ALPINE_IMAGE).inspect();
-    logger.info('[ensureNetlabAlpineImage] già presente, skip build');
-    return;
-  } catch {
-    logger.info('[ensureNetlabAlpineImage] non presente, avvio build...');
-  }
-
-  const contextPath = fs.mkdtempSync(path.join(os.tmpdir(), 'netlab-alpine-'));
-  fs.writeFileSync(path.join(contextPath, 'Dockerfile'), NETLAB_ALPINE_DOCKERFILE);
-  const chunks: Buffer[] = [];
-  try {
-    const stream = await docker.buildImage(
-      { context: contextPath, src: ['Dockerfile'] },
-      { t: NETLAB_ALPINE_IMAGE }
-    );
-    stream.on('data', (c: Buffer) => chunks.push(c));
-    await new Promise<void>((resolve, reject) => {
-      docker.modem.followProgress(stream, (err: Error | null) => err ? reject(err) : resolve());
-    });
-    logger.info(`[ensureNetlabAlpineImage] build completata: ${Buffer.concat(chunks).toString('utf8').slice(-800)}`);
-  } catch (buildErr) {
-    logger.error(`[ensureNetlabAlpineImage] BUILD FALLITA. Output: ${Buffer.concat(chunks).toString('utf8')}`, buildErr);
-    throw new Error(
-      "Impossibile costruire l'immagine netlab-alpine. " +
-      'Verifica la connessione internet e riprova.'
-    );
-  } finally {
-    fs.rmSync(contextPath, { recursive: true, force: true });
-  }
-}
-
 async function ensureImagePresent(image: string): Promise<void> {
-  if (image === 'netlab-alpine' || image === NETLAB_ALPINE_IMAGE) {
-    await ensureNetlabAlpineImage();
-    return;
-  }
   try {
     await docker.getImage(image).inspect();
   } catch {

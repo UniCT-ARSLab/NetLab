@@ -64,12 +64,11 @@ export class NodeFormComponent implements OnChanges {
   }
 
   readonly imageOptions = [
-    { label: 'netlab-alpine', value: 'netlab-alpine' },
-    { label: 'netshoot (debug)', value: 'nicolaka/netshoot' },
+    { label: 'netshoot', value: 'nicolaka/netshoot' },
   ];
 
   name           = '';
-  image          = 'netlab-alpine';
+  image          = 'nicolaka/netshoot';
   cpuLimit       = 1.0;
   memoryMb       = 256;
   interfaces: InterfaceRow[] = [];
@@ -168,7 +167,7 @@ export class NodeFormComponent implements OnChanges {
   }
 
   private reset(): void {
-    this.name = ''; this.image = 'netlab-alpine';
+    this.name = ''; this.image = 'nicolaka/netshoot';
     this.cpuLimit = 1.0; this.memoryMb = 256;
     this.interfaces = []; this.mounts = [];
     this.internetFacing = false;
