@@ -119,6 +119,7 @@ export const NodeService = {
       mounts: params.mounts ?? [],
       internetFacing: params.internetFacing ?? false,
       wanIfaceName: params.wanIfaceName ?? 'eth_wan',
+      isSwitch: params.isSwitch ?? false,
     };
     nodes.set(node.id, node);
     persist();
@@ -144,6 +145,9 @@ export const NodeService = {
     }
     if (params.wanIfaceName !== undefined) {
       node.wanIfaceName = params.wanIfaceName;
+    }
+    if (params.isSwitch !== undefined) {
+      node.isSwitch = params.isSwitch;
     }
     nodes.set(id, node);
     persist();

@@ -50,6 +50,20 @@
 
     <p-divider><span class="divider-label">{{ 'form.interfaces-section' | translate }}</span></p-divider>
 
+    <div class="internet-banner" [class.internet-banner--on]="isSwitch">
+      <div class="internet-banner__left">
+        <i class="pi pi-sitemap"></i>
+        <span>{{ 'form.switch-label' | translate }}</span>
+      </div>
+      <p-toggleswitch [(ngModel)]="isSwitch" inputId="isSwitch" />
+    </div>
+    @if (isSwitch) {
+      <small class="field-hint">
+        <i class="pi pi-info-circle"></i>
+        <span>{{ 'form.switch-hint' | translate }}</span>
+      </small>
+    }
+
     @if (links().length === 0) {
       <small class="field-hint">
         <i class="pi pi-info-circle"></i>

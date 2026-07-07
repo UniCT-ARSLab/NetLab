@@ -30,6 +30,33 @@ async function ensureNsenterHelperImage(): Promise<void> {
   }
 }
 
+function demuxExecOutput(stream: NodeJS.ReadableStream): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    stream.on('data', (c: Buffer) => chunks.push(Buffer.isBuffer(c) ? c : Buffer.from(c)));
+    stream.on('end', () => {
+      const raw = Buffer.concat(chunks);
+      let text = '';
+      let i = 0;
+      while (i + 8 <= raw.length) {
+        const size = raw.readUInt32BE(i + 4);
+        const end  = i + 8 + size;
+        if (end > raw.length) break;
+        text += raw.subarray(i + 8, end).toString('utf8');
+        i = end;
+      }
+      resolve(text);
+    });
+    stream.on('error', reject);
+  });
+}
+
+async function execCapture(container: ReturnType<typeof docker.getContainer>, cmd: string): Promise<string> {
+  const exec = await container.exec({ Cmd: ['sh', '-c', cmd], AttachStdout: true, AttachStderr: true });
+  const stream = await exec.start({ hijack: true, stdin: false });
+  return demuxExecOutput(stream);
+}
+
 function persist(): void {
   // runtime only
   const toSave = Array.from(links.values()).map(l => ({
@@ -245,6 +272,47 @@ export const NetworkService = {
       stream.on('end', resolve);
       stream.on('error', (e: Error) => { logger.warn('[attachInterface exec]', e); resolve(); });
     });
+  },
+
+  // Docker Desktop (macOS/Windows) non usa docker-proxy, quindi abilita hairpin
+  // mode sulle veth delle sue bridge. Su un nodo che fa da bridge L2 tra due
+  // reti Docker questo trasforma il flooding normale in un loop infinito: ogni
+  // bridge host-level riflette indietro sulla stessa porta i frame che il
+  // container ha appena inoltrato sull'altra. Spegniamo l'hairpin sulle veth
+  // host-side delle interfacce del nodo dopo ogni avvio (le veth cambiano ad
+  // ogni riavvio del container, va rifatto ogni volta). Su Linux nativo hairpin
+  // è già off di default: qui è un no-op innocuo.
+  async disableHairpinForSwitch(nodeId: string): Promise<void> {
+    const node = NodeService.get(nodeId);
+    if (!node?.containerId) return;
+    const container = docker.getContainer(node.containerId);
+
+    for (const iface of node.interfaces) {
+      if (!iface.linkName) continue;
+      try {
+        const peerIdx = (await execCapture(container, `cat /sys/class/net/${iface.name}/iflink 2>/dev/null`)).trim();
+        if (!peerIdx || !/^\d+$/.test(peerIdx)) continue;
+
+        await ensureNsenterHelperImage();
+        const helper = await docker.createContainer({
+          Image: NSENTER_HELPER_IMAGE,
+          Entrypoint: ['nsenter'],
+          Cmd: ['-t', '1', '-n', '--', 'sh', '-c',
+            `veth=$(ip -o link show | grep "^${peerIdx}:" | sed -E 's/^[0-9]+: ([^@]+)@.*/\\1/'); [ -n "$veth" ] && bridge link set dev "$veth" hairpin off || true`],
+          HostConfig: { Privileged: true, PidMode: 'host', AutoRemove: true },
+          AttachStdout: true,
+          AttachStderr: true,
+        });
+        const stream = await helper.attach({ stream: true, stdout: true, stderr: true });
+        const chunks: Buffer[] = [];
+        stream.on('data', (c: Buffer) => chunks.push(c));
+        await helper.start();
+        const { StatusCode } = await helper.wait();
+        logger.info(`[disableHairpinForSwitch] iface=${iface.name} peerIdx=${peerIdx} exit=${StatusCode} output=${Buffer.concat(chunks).toString('utf8').trim()}`);
+      } catch (e) {
+        logger.warn(`[disableHairpinForSwitch] iface ${iface.name} fallita:`, e);
+      }
+    }
   },
 
   async applyInterfacesConfig(nodeId: string, ifaceNames: string[]): Promise<void> {

@@ -75,6 +75,7 @@ export class NodeFormComponent implements OnChanges {
   mounts: MountRow[] = [];
   internetFacing = false;
   wanIfaceName   = 'eth_wan';
+  isSwitch       = false;
 
   get dialogHeader(): string {
     return this.editNode
@@ -93,6 +94,7 @@ export class NodeFormComponent implements OnChanges {
         this.mounts        = (this.editNode.mounts ?? []).map((m) => ({ ...m }));
         this.internetFacing = this.editNode.internetFacing ?? false;
         this.wanIfaceName   = this.editNode.wanIfaceName  ?? 'eth_wan';
+        this.isSwitch       = this.editNode.isSwitch ?? false;
       } else {
         this.reset();
       }
@@ -147,6 +149,7 @@ export class NodeFormComponent implements OnChanges {
       mounts:         this.mounts.filter((m) => m.hostPath && m.containerPath),
       internetFacing: this.internetFacing,
       wanIfaceName:   this.internetFacing ? (this.wanIfaceName.trim() || 'eth_wan') : undefined,
+      isSwitch:       this.isSwitch,
     };
 
     if (this.editNode) {
@@ -172,5 +175,6 @@ export class NodeFormComponent implements OnChanges {
     this.interfaces = []; this.mounts = [];
     this.internetFacing = false;
     this.wanIfaceName   = 'eth_wan';
+    this.isSwitch       = false;
   }
 }

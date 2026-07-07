@@ -7,6 +7,7 @@ export interface CreateNodeParams {
   mounts?: Array<{ hostPath: string; containerPath: string }>;
   internetFacing?: boolean;
   wanIfaceName?: string;
+  isSwitch?: boolean;
 }
 
 export const IPC_CHANNELS = {

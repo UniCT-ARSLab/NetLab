@@ -55,6 +55,8 @@ export const en: Record<string, string> = {
   'form.wan-iface-label':        'WAN interface name',
   'form.wan-badge':              'WAN · Internet',
   'form.internet-facing-hint':   'eth_wan gets an IP automatically (like an ISP uplink). You still configure: ip_forward, iptables MASQUERADE on eth_wan, and the default route on connected nodes.',
+  'form.switch-label':           'Switch node',
+  'form.switch-hint':            'Bridge the interfaces manually inside the container (ip link add br0 type bridge). NetLab automatically disables hairpin mode on the underlying Docker interfaces at every start, to avoid an L2 loop on Docker Desktop.',
 
   'links.title': 'Links',
   'links.empty': 'No links',

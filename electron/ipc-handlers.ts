@@ -280,6 +280,13 @@ export function registerIpcHandlers(_win: BrowserWindow): void {
       const attachedIfaces = node.interfaces.filter(i => i.linkName).map(i => i.name);
       await NetworkService.applyInterfacesConfig(node.id, attachedIfaces);
 
+      // Nodi marcati come switch bridgano più reti Docker al loro interno:
+      // su Docker Desktop questo genera un loop L2 per via dell'hairpin mode
+      // (vedi commento in NetworkService.disableHairpinForSwitch).
+      if (node.isSwitch) {
+        await NetworkService.disableHairpinForSwitch(node.id);
+      }
+
       // Internet-facing nodes get a dedicated WAN bridge with ip_masquerade=true.
       // The student must still configure ip_forward, iptables MASQUERADE rules,
       // and routes manually — Docker only handles the NAT subnet setup.

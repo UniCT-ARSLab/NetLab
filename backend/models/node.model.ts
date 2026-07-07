@@ -22,4 +22,5 @@ export interface LabNode {
   mounts?: Mount[];
   internetFacing?: boolean;
   wanIfaceName?: string;
+  isSwitch?: boolean;
 }
