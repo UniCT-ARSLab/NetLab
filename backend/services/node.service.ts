@@ -1,3 +1,6 @@
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { docker } from './docker.client';
 import { DbService } from './db.service';
@@ -9,13 +12,39 @@ const LABEL_MANAGED  = 'netlab.managed';
 const LABEL_NODE_ID  = 'netlab.node-id';
 const LABEL_NODE_NAME = 'netlab.node-name';
 
+// Alpine standard non include iproute2 (solo BusyBox ip, che non sa creare
+// interfacce). Questa immagine viene buildata in locale una volta sola.
+export const NETLAB_ALPINE_IMAGE = 'netlab-alpine:latest';
+const NETLAB_ALPINE_DOCKERFILE = 'FROM alpine:3.20\nRUN apk add --no-cache iproute2\n';
+
 let nodes = new Map<string, LabNode>();
 
 function persist(): void {
   DbService.persistNodes(Array.from(nodes.values()));
 }
 
+async function ensureNetlabAlpineImage(): Promise<void> {
+  try {
+    await docker.getImage(NETLAB_ALPINE_IMAGE).inspect();
+  } catch {
+    const contextPath = fs.mkdtempSync(path.join(os.tmpdir(), 'netlab-alpine-'));
+    fs.writeFileSync(path.join(contextPath, 'Dockerfile'), NETLAB_ALPINE_DOCKERFILE);
+    const stream = await docker.buildImage(
+      { context: contextPath, src: ['Dockerfile'] },
+      { t: NETLAB_ALPINE_IMAGE }
+    );
+    await new Promise<void>((resolve, reject) => {
+      docker.modem.followProgress(stream, (err: Error | null) => err ? reject(err) : resolve());
+    });
+    fs.rmSync(contextPath, { recursive: true, force: true });
+  }
+}
+
 async function ensureImagePresent(image: string): Promise<void> {
+  if (image === 'netlab-alpine' || image === NETLAB_ALPINE_IMAGE) {
+    await ensureNetlabAlpineImage();
+    return;
+  }
   try {
     await docker.getImage(image).inspect();
   } catch {

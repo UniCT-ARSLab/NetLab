@@ -64,11 +64,11 @@ export class NodeFormComponent implements OnChanges {
   }
 
   readonly imageOptions = [
-    { label: 'alpine', value: 'alpine' },
+    { label: 'alpine', value: 'netlab-alpine' },
   ];
 
   name           = '';
-  image          = 'alpine';
+  image          = 'netlab-alpine';
   cpuLimit       = 1.0;
   memoryMb       = 256;
   interfaces: InterfaceRow[] = [];

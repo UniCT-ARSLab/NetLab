@@ -236,7 +236,10 @@ export function registerIpcHandlers(_win: BrowserWindow): void {
       const node = await NodeService.start(id);
 
       for (const iface of node.interfaces) {
-        if (!iface.linkName) continue;
+        if (!iface.linkName) {
+          await NetworkService.createDummyInterface(node.id, iface.name);
+          continue;
+        }
         try {
           await NetworkService.attachInterface(node.id, iface.name, iface.linkName);
         } catch (e) {

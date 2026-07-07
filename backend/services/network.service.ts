@@ -99,7 +99,6 @@ export const NetworkService = {
       Name: `netlab_${name}`,
       Driver: 'bridge',
       Options: {
-        'com.docker.network.bridge.default_bridge': 'true',
         'com.docker.network.bridge.enable_icc': 'true',
         'com.docker.network.bridge.enable_ip_masquerade': 'false',
       },
@@ -141,6 +140,32 @@ export const NetworkService = {
     await container.start();
     const { StatusCode } = await container.wait();
     logger.info(`[disableFallbackTunnels] exit=${StatusCode} output=${Buffer.concat(chunks).toString('utf8').trim()}`);
+  },
+
+  // Interfacce senza link assegnato non hanno nessuna Docker network a cui
+  // agganciarsi: creiamo un'interfaccia dummy per farla comunque comparire
+  // in "ip a" (una scheda di rete con il cavo scollegato), inerte a tutti
+  // gli effetti. Se in seguito lo studente assegna un link, attachInterface
+  // trova già occupato quel nome e lo gestisce con lo stesso meccanismo
+  // usato per i conflitti di rinomina (sposta l'occupante su eth_tmp).
+  async createDummyInterface(nodeId: string, ifaceName: string): Promise<void> {
+    const node = NodeService.get(nodeId);
+    if (!node?.containerId) return;
+    const container = docker.getContainer(node.containerId);
+    const exec = await container.exec({
+      Cmd: ['sh', '-c', `
+        ip link add "${ifaceName}" type dummy 2>/dev/null || true
+        ip link set "${ifaceName}" up 2>/dev/null || true
+      `],
+      AttachStdout: true,
+      AttachStderr: true,
+    });
+    const stream = await exec.start({ hijack: true, stdin: false });
+    await new Promise<void>((resolve) => {
+      stream.resume();
+      stream.on('end', resolve);
+      stream.on('error', (e: Error) => { logger.warn('[createDummyInterface exec]', e); resolve(); });
+    });
   },
 
   // renaming of interfaces based on mac identification
