@@ -7,9 +7,12 @@ import { NetworkService } from '../backend/services/network.service';
 import { docker, isDockerAvailable } from '../backend/services/docker.client';
 import { logger } from './logger';
 
-function buildDockerExecCommand(containerId: string): string {
+// cmd.exe non capisce le virgolette singole come delimitatore di stringa:
+// tratterebbe il suo `&&` interno come proprio operatore invece che come
+// parte dell'argomento passato a `sh -c`. Serve il doppio apice lì.
+function buildDockerExecCommand(containerId: string, quote: '"' | "'" = "'"): string {
   const shellCmd = `command -v bash > /dev/null 2>&1 && exec bash || exec sh`;
-  return `docker exec -it ${containerId} sh -c '${shellCmd}'`;
+  return `docker exec -it ${containerId} sh -c ${quote}${shellCmd}${quote}`;
 }
 
 function commandExists(cmd: string): boolean {
@@ -25,9 +28,8 @@ function commandExists(cmd: string): boolean {
 // Nessun controllo sulla sessione una volta lanciata: è un processo
 // indipendente dall'app, esattamente come aprirlo a mano.
 async function openNativeTerminal(containerId: string, nodeName: string): Promise<void> {
-  const dockerCmd = buildDockerExecCommand(containerId);
-
   if (process.platform === 'darwin') {
+    const dockerCmd = buildDockerExecCommand(containerId);
     const appleScript = `tell application "Terminal"
       set newTab to do script "${dockerCmd.replace(/"/g, '\\"')}"
       set custom title of newTab to "${nodeName.replace(/"/g, '\\"')}"
@@ -40,6 +42,7 @@ async function openNativeTerminal(containerId: string, nodeName: string): Promis
   }
 
   if (process.platform === 'win32') {
+    const dockerCmd = buildDockerExecCommand(containerId, '"');
     const titledCmd = `title ${nodeName} && ${dockerCmd}`;
     // `start`'s first quoted argument is always taken as the window title —
     // without literal quotes around it, it tries to run it as a program instead.
@@ -49,6 +52,7 @@ async function openNativeTerminal(containerId: string, nodeName: string): Promis
     return;
   }
 
+  const dockerCmd = buildDockerExecCommand(containerId);
   const linuxTerminals: Array<{ cmd: string; args: string[] }> = [
     { cmd: 'x-terminal-emulator', args: ['-e', dockerCmd] },
     { cmd: 'gnome-terminal', args: [`--title=${nodeName}`, '--', 'sh', '-c', dockerCmd] },
