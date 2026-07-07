@@ -63,8 +63,6 @@ export const it: Record<string, string> = {
   'links.node':           'nodo',
   'links.nodes':          'nodi',
   'links.placeholder':    'es. linkA',
-  'links.type-cable':     'Cavo (2 nodi)',
-  'links.type-switch':    'Switch (N nodi)',
   'links.created-suffix': ' creato',
   'links.deleted-suffix': ' eliminato',
 

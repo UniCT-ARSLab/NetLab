@@ -30,7 +30,7 @@ declare global {
 
       // Link
       listLinks: () => Promise<LabLink[]>;
-      createLink: (name: string, type?: 'cable' | 'switch') => Promise<LabLink>;
+      createLink: (name: string) => Promise<LabLink>;
       deleteLink: (name: string) => Promise<void>;
 
       // Terminale - terminale nativo del sistema operativo

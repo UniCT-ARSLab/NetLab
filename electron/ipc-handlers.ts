@@ -353,9 +353,9 @@ export function registerIpcHandlers(_win: BrowserWindow): void {
     return NetworkService.list();
   });
 
-  ipcMain.handle(IPC_CHANNELS.LINK_CREATE, async (_e, name: string, type?: 'cable' | 'switch') => {
+  ipcMain.handle(IPC_CHANNELS.LINK_CREATE, async (_e, name: string) => {
     try {
-      return await NetworkService.createLink(name, type);
+      return await NetworkService.createLink(name);
     } catch (e) {
       throw toUserError(e);
     }

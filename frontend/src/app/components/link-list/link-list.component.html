@@ -12,10 +12,6 @@
   <div class="link-create-row">
     <input pInputText [(ngModel)]="newLinkName" [placeholder]="'links.placeholder' | translate"
       (keyup.enter)="submitCreate()" class="link-create-input" />
-    <select [(ngModel)]="newLinkType" class="link-create-type">
-      <option value="cable">{{ 'links.type-cable' | translate }}</option>
-      <option value="switch">{{ 'links.type-switch' | translate }}</option>
-    </select>
     <p-button icon="pi pi-check" [text]="true" size="small"
       [disabled]="!newLinkName.trim()" (onClick)="submitCreate()" />
   </div>
@@ -30,7 +26,7 @@
   <div class="link-list">
     @for (link of links(); track link.name) {
       <div class="link-row">
-        <i class="pi" [class.pi-share-alt]="link.type !== 'switch'" [class.pi-sitemap]="link.type === 'switch'" class="link-row__icon"></i>
+        <i class="pi pi-share-alt link-row__icon"></i>
         <span class="link-row__name">{{ link.name }}</span>
         <span class="link-row__nodes">
           {{ link.connectedNodes.length }}

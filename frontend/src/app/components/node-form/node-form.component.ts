@@ -58,7 +58,7 @@ export class NodeFormComponent implements OnChanges {
     return [
       { label: this.translate.instant('form.no-link-option'), value: '' },
       ...this.links()
-        .filter(l => l.type === 'switch' || (usage.get(l.name) ?? 0) < 2 || l.name === iface.linkName)
+        .filter(l => (usage.get(l.name) ?? 0) < 2 || l.name === iface.linkName)
         .map(l => ({ label: l.name, value: l.name })),
     ];
   }

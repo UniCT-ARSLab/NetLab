@@ -52,16 +52,6 @@
   min-width: 0;
 }
 
-.link-create-type {
-  flex-shrink: 0;
-  background: #27272a;
-  color: #e4e4e7;
-  border: 1px solid #3f3f46;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  padding: 4px 6px;
-}
-
 .sidebar-empty {
   flex: 1;
   display: flex;

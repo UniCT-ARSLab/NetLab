@@ -63,8 +63,6 @@ export const en: Record<string, string> = {
   'links.node': 'node',
   'links.nodes': 'nodes',
   'links.placeholder': 'e.g. linkA',
-  'links.type-cable': 'Cable (2 nodes)',
-  'links.type-switch': 'Switch (N nodes)',
   'links.created-suffix': ' created',
   'links.deleted-suffix': ' deleted',
 
