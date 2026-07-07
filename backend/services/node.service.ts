@@ -234,13 +234,12 @@ export const NodeService = {
       },
       HostConfig: {
         Privileged: true,
+        NetworkMode: 'none',
         Binds: (node.mounts ?? []).map(m => `${m.hostPath}:${m.containerPath}`),
         ...(node.cpuLimit ? { NanoCpus: Math.round(node.cpuLimit * 1e9) } : {}),
         ...(node.memoryMb ? { Memory: node.memoryMb * 1024 * 1024 } : {}),
       },
     });
-
-    try { await docker.getNetwork('bridge').disconnect({ Container: container.id }); } catch { /* ignore */ }
 
     await container.start();
     node.containerId = container.id;
