@@ -1,4 +1,6 @@
 import { ipcMain, BrowserWindow, app, dialog, screen } from 'electron';
+import * as fs from 'fs';
+import * as os from 'os';
 import * as path from 'path';
 import { execFile, execFileSync, spawn } from 'child_process';
 import { IPC_CHANNELS, CreateNodeParams } from '../backend/models/ipc.model';
@@ -42,12 +44,15 @@ async function openNativeTerminal(containerId: string, nodeName: string): Promis
   }
 
   if (process.platform === 'win32') {
+    // Chaining `start ... && docker exec ...` on one cmd.exe line is fragile:
+    // the outer /c splits on its own `&&` before `start` ever gets to hand
+    // the rest to the spawned window. A .bat file sidesteps the nested
+    // quoting entirely — cmd.exe just runs each line as-is.
     const dockerCmd = buildDockerExecCommand(containerId, '"');
-    const titledCmd = `title ${nodeName} && ${dockerCmd}`;
-    // `start`'s first quoted argument is always taken as the window title —
-    // without literal quotes around it, it tries to run it as a program instead.
+    const batPath = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'netlab-term-')), 'open.bat');
+    fs.writeFileSync(batPath, `@title ${nodeName}\r\n${dockerCmd}\r\n`);
     await new Promise<void>((resolve, reject) => {
-      execFile('cmd.exe', ['/c', 'start', `"${nodeName}"`, 'cmd', '/k', titledCmd], (err) => err ? reject(err) : resolve());
+      execFile('cmd.exe', ['/c', 'start', `"${nodeName}"`, 'cmd', '/k', `"${batPath}"`], (err) => err ? reject(err) : resolve());
     });
     return;
   }
