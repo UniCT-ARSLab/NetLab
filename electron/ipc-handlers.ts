@@ -68,11 +68,16 @@ async function openNativeTerminal(containerId: string, nodeName: string): Promis
 
   const dockerCmd = buildDockerExecCommand(containerId);
   const linuxTerminals: Array<{ cmd: string; args: string[] }> = [
-    { cmd: 'x-terminal-emulator', args: ['-e', dockerCmd] },
+    // Terminali specifici prima: supportano tutti un flag per il titolo.
+    // x-terminal-emulator (wrapper di update-alternatives, quasi sempre
+    // presente su Debian/Ubuntu) va per ultimo: non ha un flag di titolo
+    // affidabile e, se controllato per primo, avrebbe sempre la precedenza
+    // sulle voci sottostanti impedendo la rinomina.
     { cmd: 'gnome-terminal', args: [`--title=${nodeName}`, '--', 'sh', '-c', dockerCmd] },
     { cmd: 'konsole', args: ['-p', `tabtitle=${nodeName}`, '-e', dockerCmd] },
     { cmd: 'xfce4-terminal', args: ['-T', nodeName, '-e', dockerCmd] },
     { cmd: 'xterm', args: ['-T', nodeName, '-e', dockerCmd] },
+    { cmd: 'x-terminal-emulator', args: ['-e', dockerCmd] },
   ];
   const found = linuxTerminals.find(t => commandExists(t.cmd));
   if (!found) throw new Error('Nessun emulatore di terminale trovato sul sistema.');
