@@ -24,6 +24,11 @@ async function createWindow(): Promise<void> {
     minWidth: 720,
     minHeight: 480,
     title: 'NetLab',
+    // Packaged builds get their icon embedded at build time (win.icon/
+    // mac.icon/linux.icon in package.json) — this is only needed so `npm
+    // run dev` shows something better than Electron's default logo, since
+    // build/icon.png isn't bundled into the packaged app's resources.
+    ...(!app.isPackaged ? { icon: path.join(__dirname, '../../build/icon.png') } : {}),
     ...(process.platform === 'darwin'
       ? { titleBarStyle: 'hidden' as const, trafficLightPosition: { x: 16, y: 14 } }
       : { frame: false }),

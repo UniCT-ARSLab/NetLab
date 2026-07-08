@@ -35,6 +35,8 @@
   "build": {
     "appId": "com.netlab.app",
     "productName": "NetLab",
+    "copyright": "Copyright © 2026 NetLab",
+    "icon": "build/icon.png",
     "directories": {
       "output": "release"
     },
@@ -49,9 +51,14 @@
       "createDesktopShortcut": "always",
       "createStartMenuShortcut": true,
       "shortcutName": "NetLab",
-      "deleteAppDataOnUninstall": false
+      "deleteAppDataOnUninstall": false,
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerHeaderIcon": "build/icon.ico",
+      "uninstallDisplayName": "NetLab"
     },
     "win": {
+      "icon": "build/icon.ico",
       "target": [
         {
           "target": "nsis",
@@ -62,6 +69,7 @@
       ]
     },
     "mac": {
+      "icon": "build/icon.icns",
       "target": [
         {
           "target": "dmg",
@@ -74,6 +82,7 @@
       "category": "public.app-category.education"
     },
     "linux": {
+      "icon": "build/icons",
       "target": [
         {
           "target": "AppImage",
