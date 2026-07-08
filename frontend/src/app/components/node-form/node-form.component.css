@@ -17,6 +17,9 @@
 }
 
 .field-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
   color: var(--p-text-muted-color);
   font-size: 0.8rem;
 }
@@ -31,10 +34,21 @@
   gap: 1rem;
 }
 
-.resource-options-row {
+.advanced-toggle {
   display: flex;
-  justify-content: flex-end;
-  margin-top: -0.5rem;
+  align-items: center;
+  gap: 0.4rem;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+
+.advanced-toggle .pi {
+  font-size: 0.7rem;
+  color: var(--p-text-muted-color);
 }
 
 .checkbox-label {
@@ -131,15 +145,13 @@
 }
 
 .iface-hint {
-  display: block;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
   margin: -0.25rem 0 0.25rem 0;
   color: var(--p-text-muted-color);
   font-size: 0.78rem;
   line-height: 1.4;
-}
-
-.iface-hint .pi {
-  margin-right: 0.2rem;
 }
 
 /* Shared folders */

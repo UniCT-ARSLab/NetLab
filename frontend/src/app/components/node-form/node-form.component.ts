@@ -70,7 +70,7 @@ export class NodeFormComponent implements OnChanges {
 
   name           = '';
   image          = 'nicolaka/netshoot';
-  showResourceOptions = false;
+  showAdvanced = false;
   limitCpu       = false;
   limitMemory    = false;
   cpuLimit       = 1.0;
@@ -96,7 +96,7 @@ export class NodeFormComponent implements OnChanges {
         this.limitMemory = this.editNode.memoryMb != null;
         this.cpuLimit    = this.editNode.cpuLimit  ?? 1.0;
         this.memoryMb    = this.editNode.memoryMb  ?? 256;
-        this.showResourceOptions = this.limitCpu || this.limitMemory;
+        this.showAdvanced = this.limitCpu || this.limitMemory;
         this.interfaces    = this.editNode.interfaces.map((i) => ({ ...i }));
         this.mounts        = (this.editNode.mounts ?? []).map((m) => ({ ...m }));
         this.internetFacing = this.editNode.internetFacing ?? false;
@@ -178,7 +178,7 @@ export class NodeFormComponent implements OnChanges {
 
   private reset(): void {
     this.name = ''; this.image = 'nicolaka/netshoot';
-    this.showResourceOptions = false;
+    this.showAdvanced = false;
     this.limitCpu = false; this.limitMemory = false;
     this.cpuLimit = 1.0; this.memoryMb = 256;
     this.interfaces = []; this.mounts = [];

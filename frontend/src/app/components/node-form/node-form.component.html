@@ -32,41 +32,6 @@
       <p-toggleswitch [(ngModel)]="internetFacing" inputId="internetFacing" />
     </div>
 
-    <p-divider><span class="divider-label">{{ 'form.resources' | translate }}</span></p-divider>
-
-    <div class="resource-options-row">
-      <p-button [label]="'form.resource-options' | translate" icon="pi pi-sliders-h"
-        severity="secondary" [text]="true" size="small"
-        (onClick)="showResourceOptions = !showResourceOptions" />
-    </div>
-
-    @if (showResourceOptions) {
-      <div class="field-row">
-        <div class="field">
-          <label class="checkbox-label">
-            <p-checkbox [(ngModel)]="limitMemory" [binary]="true" inputId="limitMemory" />
-            {{ 'form.ram-label' | translate }}
-          </label>
-          <p-inputnumber [(ngModel)]="memoryMb" [disabled]="!limitMemory" [min]="64" [max]="4096"
-            [step]="64" suffix=" MB" [fluid]="true" />
-        </div>
-        <div class="field">
-          <label class="checkbox-label">
-            <p-checkbox [(ngModel)]="limitCpu" [binary]="true" inputId="limitCpu" />
-            {{ 'form.cpu-label' | translate }}
-          </label>
-          <p-inputnumber [(ngModel)]="cpuLimit" [disabled]="!limitCpu" [min]="0.1" [max]="4"
-            [step]="0.1" [minFractionDigits]="1" [maxFractionDigits]="1"
-            suffix=" core" [fluid]="true" />
-        </div>
-      </div>
-    } @else {
-      <small class="field-hint">
-        <i class="pi pi-info-circle"></i>
-        <span>{{ 'form.resources-unlimited-hint' | translate }}</span>
-      </small>
-    }
-
     <p-divider><span class="divider-label">{{ 'form.interfaces-section' | translate }}</span></p-divider>
 
     <div class="internet-banner" [class.internet-banner--on]="isSwitch">
@@ -118,14 +83,15 @@
           <p-button icon="pi pi-times" severity="danger" [text]="true"
             size="small" (onClick)="removeInterface(i)" />
         </div>
-        @if (!iface.linkName) {
-          <small class="iface-hint">
-            <i class="pi pi-info-circle"></i>
-            <span>{{ 'form.no-link-hint' | translate }}</span>
-          </small>
-        }
       }
     </div>
+
+    @if (interfaces.length > 0 && interfaces.some(i => !i.linkName)) {
+      <small class="iface-hint">
+        <i class="pi pi-info-circle"></i>
+        <span>{{ 'form.no-link-hint' | translate }}</span>
+      </small>
+    }
 
     <p-button [label]="'btn.add-interface' | translate" icon="pi pi-plus"
       severity="secondary" [text]="true" size="small"
@@ -159,6 +125,35 @@
     <p-button [label]="'btn.add-folder' | translate" icon="pi pi-folder-open"
       severity="secondary" [text]="true" size="small"
       (onClick)="addMount()" />
+
+    <p-divider>
+      <button type="button" class="advanced-toggle" (click)="showAdvanced = !showAdvanced">
+        <span class="divider-label">{{ 'form.advanced' | translate }}</span>
+        <i class="pi" [class.pi-chevron-down]="!showAdvanced" [class.pi-chevron-up]="showAdvanced"></i>
+      </button>
+    </p-divider>
+
+    @if (showAdvanced) {
+      <div class="field-row">
+        <div class="field">
+          <label class="checkbox-label">
+            <p-checkbox [(ngModel)]="limitMemory" [binary]="true" inputId="limitMemory" />
+            {{ 'form.ram-label' | translate }}
+          </label>
+          <p-inputnumber [(ngModel)]="memoryMb" [disabled]="!limitMemory" [min]="64" [max]="4096"
+            [step]="64" suffix=" MB" [fluid]="true" />
+        </div>
+        <div class="field">
+          <label class="checkbox-label">
+            <p-checkbox [(ngModel)]="limitCpu" [binary]="true" inputId="limitCpu" />
+            {{ 'form.cpu-label' | translate }}
+          </label>
+          <p-inputnumber [(ngModel)]="cpuLimit" [disabled]="!limitCpu" [min]="0.1" [max]="4"
+            [step]="0.1" [minFractionDigits]="1" [maxFractionDigits]="1"
+            suffix=" core" [fluid]="true" />
+        </div>
+      </div>
+    }
 
   </div>
 
