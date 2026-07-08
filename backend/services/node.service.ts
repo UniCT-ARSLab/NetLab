@@ -17,37 +17,24 @@ const LABEL_NODE_NAME = 'netlab.node-name';
 const CUSTOM_IMAGE_PACKAGES_APT = 'iproute2 iptables bridge-utils tcpdump ethtool iputils-ping dnsutils curl wget vim nano traceroute';
 const CUSTOM_IMAGE_PACKAGES_APK = 'iproute2 iptables bridge-utils tcpdump ethtool iputils bind-tools curl wget vim nano traceroute';
 
+// Debian/Ubuntu ship a default root .bashrc whose xterm-title line
+// (PS1="\[\e]0;...${debian_chroot}...\a\]$PS1") resets the terminal window
+// title the moment an interactive shell starts, clobbering the title NetLab
+// just set when opening the terminal. Matching on "debian_chroot" (a plain
+// substring unique to that line) sidesteps any ambiguity around how sed
+// itself interprets \e in a pattern. Harmless if the file/line is absent.
+const STRIP_BASHRC_TITLE_ESCAPE = `RUN [ -f /root/.bashrc ] && sed -i '/debian_chroot.*PS1=/d' /root/.bashrc || true\n`;
+
 const CUSTOM_IMAGES: Record<string, string> = {
   'netlab-alpine:v1': `FROM alpine:3.20\nRUN apk add --no-cache ${CUSTOM_IMAGE_PACKAGES_APK}\n`,
-  'netlab-debian:v1': `FROM debian:bookworm-slim\nRUN apt-get update && apt-get install -y --no-install-recommends ${CUSTOM_IMAGE_PACKAGES_APT} && rm -rf /var/lib/apt/lists/*\n`,
-  'netlab-ubuntu:v1': `FROM ubuntu:24.04\nRUN apt-get update && apt-get install -y --no-install-recommends ${CUSTOM_IMAGE_PACKAGES_APT} && rm -rf /var/lib/apt/lists/*\n`,
+  'netlab-debian:v2': `FROM debian:bookworm-slim\nRUN apt-get update && apt-get install -y --no-install-recommends ${CUSTOM_IMAGE_PACKAGES_APT} && rm -rf /var/lib/apt/lists/*\n${STRIP_BASHRC_TITLE_ESCAPE}`,
+  'netlab-ubuntu:v2': `FROM ubuntu:24.04\nRUN apt-get update && apt-get install -y --no-install-recommends ${CUSTOM_IMAGE_PACKAGES_APT} && rm -rf /var/lib/apt/lists/*\n${STRIP_BASHRC_TITLE_ESCAPE}`,
 };
 
 let nodes = new Map<string, LabNode>();
 
 function persist(): void {
   DbService.persistNodes(Array.from(nodes.values()));
-}
-
-// Docker imposta di default l'hostname interno del container all'ID troncato
-// (es. "58077d92f1ef"), che è quello che compare nel prompt della shell
-// (root@<hostname>). Lo sostituiamo col nome del nodo per rendere il
-// terminale leggibile, indipendentemente dall'immagine scelta.
-function sanitizeHostname(name: string): string {
-  return name.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/^-+|-+$/g, '').slice(0, 63) || 'netlab-node';
-}
-
-async function ensureImagePresent(image: string): Promise<void> {
-  try {
-    await docker.getImage(image).inspect();
-  } catch {
-    await new Promise<void>((resolve, reject) => {
-      docker.pull(image, (err: Error | null, stream: NodeJS.ReadableStream) => {
-        if (err) return reject(err);
-        docker.modem.followProgress(stream, (err2: Error | null) => err2 ? reject(err2) : resolve());
-      });
-    });
-  }
 }
 
 async function ensureCustomImageBuilt(tag: string, dockerfile: string): Promise<void> {
@@ -61,6 +48,29 @@ async function ensureCustomImageBuilt(tag: string, dockerfile: string): Promise<
       docker.modem.followProgress(stream, (err: Error | null) => err ? reject(err) : resolve());
     });
     fs.rmSync(contextPath, { recursive: true, force: true });
+  }
+}
+
+// Le immagini custom sono buildate localmente, non pullabili da un registry:
+// se un'immagine risulta mancante allo start di un nodo (l'utente potrebbe
+// averla cancellata dopo l'avvio dell'app, es. "docker image prune"), va
+// ricostruita, non "pullata" — altrimenti dockerode fallirebbe cercando un
+// repository che non esiste.
+async function ensureImagePresent(image: string): Promise<void> {
+  const customDockerfile = CUSTOM_IMAGES[image];
+  if (customDockerfile) {
+    await ensureCustomImageBuilt(image, customDockerfile);
+    return;
+  }
+  try {
+    await docker.getImage(image).inspect();
+  } catch {
+    await new Promise<void>((resolve, reject) => {
+      docker.pull(image, (err: Error | null, stream: NodeJS.ReadableStream) => {
+        if (err) return reject(err);
+        docker.modem.followProgress(stream, (err2: Error | null) => err2 ? reject(err2) : resolve());
+      });
+    });
   }
 }
 
@@ -235,7 +245,6 @@ export const NodeService = {
     const container = await docker.createContainer({
       name: node.name,
       Image: node.image,
-      Hostname: sanitizeHostname(node.name),
       Tty: true,
       OpenStdin: true,
       Labels: {

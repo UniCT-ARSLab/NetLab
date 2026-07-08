@@ -235,6 +235,7 @@ export class MainLayoutComponent implements OnInit {
   deleteLink(name: string): void {
     this.networkService.deleteLink(name).subscribe({
       next: () => this.messageService.add({ severity: 'info', summary: `Link "${name}"${this.t('links.deleted-suffix')}`, life: 3000 }),
+      error: (e: Error) => this.showError(e),
     });
   }
 
@@ -251,7 +252,18 @@ export class MainLayoutComponent implements OnInit {
     this.netInfoError.set(null);
   }
 
+  // Errori bloccanti (azione impossibile/da rivedere) meritano un dialogo che
+  // l'utente chiude esplicitamente, non un toast che sparisce da solo dopo
+  // pochi secondi mentre magari si sta ancora leggendo.
   private showError(e: Error): void {
-    this.messageService.add({ severity: 'error', summary: this.t('error.title'), detail: e.message, life: 5000 });
+    this.confirmationService.confirm({
+      message: e.message,
+      header: this.t('error.title'),
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: this.t('btn.ok'),
+      rejectVisible: false,
+      acceptButtonProps: { severity: 'danger' },
+      accept: () => {},
+    });
   }
 }

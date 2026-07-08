@@ -12,7 +12,7 @@ import { InputNumber } from 'primeng/inputnumber';
 import { Divider } from 'primeng/divider';
 import { ToggleSwitch } from 'primeng/toggleswitch';
 import { Checkbox } from 'primeng/checkbox';
-import { MessageService } from 'primeng/api';
+import { ConfirmationService } from 'primeng/api';
 import { TooltipModule } from 'primeng/tooltip';
 import { TranslateService, TranslatePipe } from '@ngx-translate/core';
 import { NodeService } from '../../services/node.service';
@@ -40,7 +40,7 @@ export class NodeFormComponent implements OnChanges {
 
   private nodeService    = inject(NodeService);
   private networkService = inject(NetworkService);
-  private messageService = inject(MessageService);
+  private confirmationService = inject(ConfirmationService);
   private translate      = inject(TranslateService);
   private cdr            = inject(ChangeDetectorRef);
 
@@ -107,7 +107,15 @@ export class NodeFormComponent implements OnChanges {
     }
   }
 
-  addInterface(): void { this.interfaces.push({ name: `eth${this.interfaces.length}`, linkName: '' }); }
+  // Naming is fully our convention, not user-editable: pick the lowest free
+  // ethN so removing an interface and adding a new one can never collide
+  // with a name still in use by another row.
+  addInterface(): void {
+    const used = new Set(this.interfaces.map(i => i.name));
+    let n = 0;
+    while (used.has(`eth${n}`)) n++;
+    this.interfaces.push({ name: `eth${n}`, linkName: '' });
+  }
   removeInterface(index: number): void { this.interfaces.splice(index, 1); }
 
   async addMount(): Promise<void> {
@@ -161,18 +169,26 @@ export class NodeFormComponent implements OnChanges {
     if (this.editNode) {
       this.nodeService.updateNode(this.editNode.id, params).subscribe({
         next: () => this.nodeUpdated.emit(),
-        error: (e: Error) => this.messageService.add({
-          severity: 'error', summary: this.translate.instant('error.title'), detail: e.message, life: 5000,
-        }),
+        error: (e: Error) => this.showError(e),
       });
     } else {
       this.nodeService.createNode(params).subscribe({
         next: () => { this.reset(); this.nodeCreated.emit(); },
-        error: (e: Error) => this.messageService.add({
-          severity: 'error', summary: this.translate.instant('error.title'), detail: e.message, life: 5000,
-        }),
+        error: (e: Error) => this.showError(e),
       });
     }
+  }
+
+  private showError(e: Error): void {
+    this.confirmationService.confirm({
+      message: e.message,
+      header: this.translate.instant('error.title'),
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: this.translate.instant('btn.ok'),
+      rejectVisible: false,
+      acceptButtonProps: { severity: 'danger' },
+      accept: () => {},
+    });
   }
 
   private reset(): void {

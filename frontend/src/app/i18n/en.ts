@@ -7,6 +7,7 @@ export const en: Record<string, string> = {
   'btn.save': 'Save',
   'btn.retry': 'Retry',
   'btn.close': 'Close',
+  'btn.ok': 'Got it',
   'btn.create-node': 'Create node',
   'btn.add-interface': 'Add interface',
   'btn.add-folder': 'Add shared folder',
