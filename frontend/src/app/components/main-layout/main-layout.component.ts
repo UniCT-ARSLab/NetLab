@@ -19,6 +19,7 @@ import { LabLink } from '../../../../../backend/models/link.model';
 import { NetworkService } from '../../services/network.service';
 import { NodeService } from '../../services/node.service';
 import { imageLabel } from '../../shared/image-options';
+import { translateAppError } from '../../shared/app-error';
 
 interface AddrRow  { name: string; state: string; ips: string; }
 interface RouteRow { dest: string; via: string;   dev: string; }
@@ -165,7 +166,7 @@ export class MainLayoutComponent implements OnInit {
       this.networkInfo.set(info);
       this.netInfoTime.set(new Date());
     } catch (e) {
-      this.netInfoError.set(e instanceof Error ? e.message : String(e));
+      this.netInfoError.set(e instanceof Error ? translateAppError(e, this.translate) : String(e));
     } finally {
       this.netInfoLoading.set(false);
     }
@@ -294,7 +295,7 @@ export class MainLayoutComponent implements OnInit {
   // few seconds while they might still be reading it.
   private showError(e: Error): void {
     this.confirmationService.confirm({
-      message: e.message,
+      message: translateAppError(e, this.translate),
       header: this.t('error.title'),
       icon: 'pi pi-exclamation-triangle',
       acceptLabel: this.t('btn.ok'),

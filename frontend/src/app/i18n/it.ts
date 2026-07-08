@@ -89,4 +89,29 @@ export const it: Record<string, string> = {
 
   'error.title': 'Errore',
 
+  // Errori strutturati dal backend (vedi backend/models/app-error.ts) —
+  // il codice arriva dal processo Electron/Node, che non ha accesso a
+  // ngx-translate, quindi traduciamo qui in base al code.
+  'errors.NODE_NOT_FOUND':        'Nodo non trovato.',
+  'errors.NODE_NAME_DUPLICATE':   'Esiste già un nodo con il nome "{{name}}"',
+  'errors.NODE_NOT_STARTED':      'Il nodo non è stato avviato.',
+  'errors.NODE_NOT_RUNNING':      'Il nodo "{{name}}" non è in esecuzione',
+  'errors.NODE_HAS_NO_CONTAINER': 'Il nodo non ha un container.',
+  'errors.CONTAINER_NOT_RUNNING': 'Container non in esecuzione.',
+  'errors.LINK_NOT_FOUND':        'Link "{{name}}" non trovato',
+  'errors.LINK_ALREADY_EXISTS':   'Link "{{name}}" già esistente',
+  'errors.LINK_AT_CAPACITY':      'Link "{{name}}" già al completo (massimo 2 nodi)',
+  'errors.LINK_IN_USE':           'Impossibile eliminare il link "{{name}}": è ancora assegnato a {{nodeNames}}. Rimuovi prima l\'assegnazione dalle interfacce.',
+  'errors.NO_TERMINAL_FOUND':     'Nessun emulatore di terminale trovato sul sistema.',
+  'errors.DOCKER_NOT_RUNNING':    'Docker non è in esecuzione. Avvialo e riprova.',
+  'errors.CONTAINER_NAME_CONFLICT': 'Esiste già un container con il nome "{{name}}". Elimina il nodo corrispondente o rinominalo prima di avviarlo.',
+  'errors.CONTAINER_NAME_CONFLICT_GENERIC': 'Esiste già un container con questo nome. Elimina il nodo o rinominalo prima di avviarlo.',
+  'errors.IMAGE_NOT_FOUND':       'Immagine Docker non trovata. Verifica il nome dell\'immagine nella configurazione del nodo.',
+  'errors.IMAGE_ACCESS_DENIED':   'Accesso all\'immagine Docker negato. Verifica il nome dell\'immagine.',
+  'errors.NETWORK_NOT_FOUND':     'La rete Docker di questo link non esiste più (forse cancellata da fuori l\'app). Riprova: NetLab la ricrea automaticamente al prossimo avvio del nodo.',
+  'errors.CONTAINER_NOT_FOUND':   'Container non trovato. Prova a eliminare il nodo e ricrearlo.',
+  'errors.PORT_IN_USE':           'Una porta richiesta è già in uso da un altro processo.',
+  'errors.INTERFACE_ATTACH_FAILED': 'Impossibile collegare l\'interfaccia "{{iface}}" al link "{{link}}": {{reason}}',
+  'errors.WAN_BRIDGE_FAILED':     'Impossibile creare l\'interfaccia WAN per "{{name}}": {{reason}}',
+
 };

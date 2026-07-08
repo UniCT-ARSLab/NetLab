@@ -89,4 +89,29 @@ export const en: Record<string, string> = {
 
   'error.title': 'Error',
 
+  // Structured errors from the backend (see backend/models/app-error.ts) —
+  // the code comes from the Electron/Node process, which has no access to
+  // ngx-translate, so we translate here based on the code.
+  'errors.NODE_NOT_FOUND':        'Node not found.',
+  'errors.NODE_NAME_DUPLICATE':   'A node named "{{name}}" already exists',
+  'errors.NODE_NOT_STARTED':      "The node hasn't been started.",
+  'errors.NODE_NOT_RUNNING':      'Node "{{name}}" is not running',
+  'errors.NODE_HAS_NO_CONTAINER': 'The node has no container.',
+  'errors.CONTAINER_NOT_RUNNING': 'Container not running.',
+  'errors.LINK_NOT_FOUND':        'Link "{{name}}" not found',
+  'errors.LINK_ALREADY_EXISTS':   'Link "{{name}}" already exists',
+  'errors.LINK_AT_CAPACITY':      'Link "{{name}}" is already at capacity (max 2 nodes)',
+  'errors.LINK_IN_USE':           'Cannot delete link "{{name}}": it is still assigned to {{nodeNames}}. Remove it from the interfaces first.',
+  'errors.NO_TERMINAL_FOUND':     'No terminal emulator found on the system.',
+  'errors.DOCKER_NOT_RUNNING':    "Docker isn't running. Start it and try again.",
+  'errors.CONTAINER_NAME_CONFLICT': 'A container named "{{name}}" already exists. Delete the corresponding node or rename it before starting it.',
+  'errors.CONTAINER_NAME_CONFLICT_GENERIC': 'A container with this name already exists. Delete the node or rename it before starting it.',
+  'errors.IMAGE_NOT_FOUND':       "Docker image not found. Check the image name in the node's configuration.",
+  'errors.IMAGE_ACCESS_DENIED':   'Access to the Docker image was denied. Check the image name.',
+  'errors.NETWORK_NOT_FOUND':     "This link's Docker network no longer exists (maybe deleted from outside the app). Try again: NetLab recreates it automatically on the node's next start.",
+  'errors.CONTAINER_NOT_FOUND':   'Container not found. Try deleting the node and recreating it.',
+  'errors.PORT_IN_USE':           'A required port is already in use by another process.',
+  'errors.INTERFACE_ATTACH_FAILED': 'Could not attach interface "{{iface}}" to link "{{link}}": {{reason}}',
+  'errors.WAN_BRIDGE_FAILED':     'Could not create the WAN interface for "{{name}}": {{reason}}',
+
 };

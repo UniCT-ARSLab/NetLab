@@ -7,6 +7,7 @@ import { DbService } from './db.service';
 import { logger } from '../../electron/logger';
 import { LabNode, NodeStatus } from '../models/node.model';
 import { CreateNodeParams } from '../models/ipc.model';
+import { AppError } from '../models/app-error';
 
 const LABEL_MANAGED  = 'netlab.managed';
 const LABEL_NODE_ID  = 'netlab.node-id';
@@ -173,7 +174,7 @@ export const NodeService = {
 
   async create(params: CreateNodeParams): Promise<LabNode> {
     if (Array.from(nodes.values()).some(n => n.name === params.name)) {
-      throw new Error(`Esiste già un nodo con il nome "${params.name}"`);
+      throw new AppError('NODE_NAME_DUPLICATE', { name: params.name });
     }
     const node: LabNode = {
       id: uuidv4(),
@@ -195,9 +196,9 @@ export const NodeService = {
 
   update(id: string, params: CreateNodeParams): LabNode {
     const node = nodes.get(id);
-    if (!node) throw new Error(`Nodo ${id} non trovato`);
+    if (!node) throw new AppError('NODE_NOT_FOUND', { id });
     if (Array.from(nodes.values()).some(n => n.id !== id && n.name === params.name)) {
-      throw new Error(`Esiste già un nodo con il nome "${params.name}"`);
+      throw new AppError('NODE_NAME_DUPLICATE', { name: params.name });
     }
 
     node.name = params.name;
@@ -226,7 +227,7 @@ export const NodeService = {
 
   async start(id: string): Promise<LabNode> {
     const node = nodes.get(id);
-    if (!node) throw new Error(`Nodo ${id} non trovato`);
+    if (!node) throw new AppError('NODE_NOT_FOUND', { id });
 
     // reuse container previously created if still present
     if (node.containerId) {
@@ -295,7 +296,7 @@ export const NodeService = {
 
   async stop(id: string): Promise<LabNode> {
     const node = nodes.get(id);
-    if (!node || !node.containerId) throw new Error(`Nodo ${id} non avviato`);
+    if (!node || !node.containerId) throw new AppError('NODE_NOT_STARTED', { id });
 
     const container = docker.getContainer(node.containerId);
     await container.stop();
@@ -308,7 +309,7 @@ export const NodeService = {
 
   async delete(id: string): Promise<void> {
     const node = nodes.get(id);
-    if (!node) throw new Error(`Nodo ${id} non trovato`);
+    if (!node) throw new AppError('NODE_NOT_FOUND', { id });
 
     if (node.containerId) {
       const container = docker.getContainer(node.containerId);

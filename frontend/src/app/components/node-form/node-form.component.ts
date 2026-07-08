@@ -21,6 +21,7 @@ import { NetworkService } from '../../services/network.service';
 import { LabNode } from '../../../../../backend/models/node.model';
 import { LabLink } from '../../../../../backend/models/link.model';
 import { IMAGE_OPTIONS } from '../../shared/image-options';
+import { parseAppError, translateAppError } from '../../shared/app-error';
 
 interface InterfaceRow { name: string; linkName: string; }
 interface MountRow     { hostPath: string; containerPath: string; }
@@ -197,7 +198,7 @@ export class NodeFormComponent implements OnChanges {
   // it, but the backend still rejects — surface it the same inline way
   // instead of falling back to the generic modal.
   private handleSubmitError(e: Error): void {
-    if (e.message.includes('Esiste già un nodo')) {
+    if (parseAppError(e)?.code === 'NODE_NAME_DUPLICATE') {
       this.triggerNameError();
       return;
     }
@@ -225,7 +226,7 @@ export class NodeFormComponent implements OnChanges {
 
   private showError(e: Error): void {
     this.confirmationService.confirm({
-      message: e.message,
+      message: translateAppError(e, this.translate),
       header: this.translate.instant('error.title'),
       icon: 'pi pi-exclamation-triangle',
       acceptLabel: this.translate.instant('btn.ok'),

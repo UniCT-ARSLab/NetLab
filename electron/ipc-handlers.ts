@@ -7,6 +7,7 @@ import { IPC_CHANNELS, CreateNodeParams } from '../backend/models/ipc.model';
 import { NodeService } from '../backend/services/node.service';
 import { NetworkService } from '../backend/services/network.service';
 import { docker, isDockerAvailable } from '../backend/services/docker.client';
+import { AppError, reasonFor } from '../backend/models/app-error';
 import { logger } from './logger';
 
 // cmd.exe doesn't understand single quotes as a string delimiter: it would
@@ -89,7 +90,7 @@ async function openNativeTerminal(containerId: string, nodeName: string): Promis
     { cmd: 'x-terminal-emulator', args: ['-e', dockerCmd] },
   ];
   const found = linuxTerminals.find(t => commandExists(t.cmd));
-  if (!found) throw new Error('Nessun emulatore di terminale trovato sul sistema.');
+  if (!found) throw new AppError('NO_TERMINAL_FOUND');
   spawn(found.cmd, found.args, { detached: true, stdio: 'ignore' }).unref();
 }
 
@@ -161,37 +162,38 @@ function parseRouteSection(raw: string): RouteRow[] {
 }
 
 function toUserError(e: unknown): Error {
+  // Already a structured, localizable error — nothing to reclassify.
+  if (e instanceof AppError) return e;
+
   const msg = (e instanceof Error ? e.message : String(e)).toLowerCase();
   const code = (e as Record<string, unknown>)?.['statusCode'] as number | undefined;
   logger.error('[toUserError] raw:', e);
 
   if (msg.includes('enoent') || msg.includes('econnrefused') ||
       msg.includes('docker.sock') || msg.includes('pipe/docker_engine')) {
-    return new Error('Docker non è in esecuzione. Avvialo e riprova.');
+    return new AppError('DOCKER_NOT_RUNNING');
   }
   if (code === 409 || msg.includes('already in use') || msg.includes('conflict')) {
     const name = (e instanceof Error ? e.message : '').match(/name "\/?([^"]+)"/)?.[1];
-    return new Error(
-      name
-        ? `Esiste già un container con il nome "${name}". Elimina il nodo corrispondente o rinominalo prima di avviarlo.`
-        : 'Esiste già un container con questo nome. Elimina il nodo o rinominalo prima di avviarlo.'
-    );
+    return name
+      ? new AppError('CONTAINER_NAME_CONFLICT', { name })
+      : new AppError('CONTAINER_NAME_CONFLICT_GENERIC');
   }
   if (msg.includes('no such image') || msg.includes('manifest unknown') ||
       msg.includes('manifest for') || (code === 404 && msg.includes('image'))) {
-    return new Error("Immagine Docker non trovata. Verifica il nome dell'immagine nella configurazione del nodo.");
+    return new AppError('IMAGE_NOT_FOUND');
   }
   if (msg.includes('no such network') || (code === 404 && msg.includes('network'))) {
-    return new Error('La rete Docker di questo link non esiste più (forse cancellata da fuori l\'app). Riprova: NetLab la ricrea automaticamente al prossimo avvio del nodo.');
+    return new AppError('NETWORK_NOT_FOUND');
   }
   if (msg.includes('pull access denied') || msg.includes('unauthorized') || msg.includes('authentication required')) {
-    return new Error("Accesso all'immagine Docker negato. Verifica il nome dell'immagine.");
+    return new AppError('IMAGE_ACCESS_DENIED');
   }
   if (msg.includes('no such container') || (code === 404 && msg.includes('container'))) {
-    return new Error('Container non trovato. Prova a eliminare il nodo e ricrearlo.');
+    return new AppError('CONTAINER_NOT_FOUND');
   }
   if (msg.includes('port is already allocated') || msg.includes('address already in use')) {
-    return new Error('Una porta richiesta è già in uso da un altro processo.');
+    return new AppError('PORT_IN_USE');
   }
   logger.error('Unhandled Docker error:', e);
   return e instanceof Error ? e : new Error(e instanceof Error ? e.message : String(e));
@@ -296,9 +298,7 @@ export function registerIpcHandlers(_win: BrowserWindow): void {
           await NetworkService.attachInterface(node.id, iface.name, iface.linkName);
         } catch (e) {
           logger.error(`attachInterface failed for ${iface.name}→${iface.linkName}:`, e);
-          throw new Error(
-            `Impossibile collegare l'interfaccia "${iface.name}" al link "${iface.linkName}": ${e instanceof Error ? e.message : String(e)}`
-          );
+          throw new AppError('INTERFACE_ATTACH_FAILED', { iface: iface.name, link: iface.linkName, reason: reasonFor(e) });
         }
       }
 
@@ -320,9 +320,7 @@ export function registerIpcHandlers(_win: BrowserWindow): void {
           await NetworkService.createWanBridge(node.id, node.wanIfaceName ?? 'eth_wan');
         } catch (e) {
           logger.error(`createWanBridge failed for ${node.name}:`, e);
-          throw new Error(
-            `Impossibile creare l'interfaccia WAN per "${node.name}": ${e instanceof Error ? e.message : String(e)}`
-          );
+          throw new AppError('WAN_BRIDGE_FAILED', { name: node.name, reason: reasonFor(e) });
         }
       }
 
@@ -356,7 +354,7 @@ export function registerIpcHandlers(_win: BrowserWindow): void {
   ipcMain.handle(IPC_CHANNELS.NODE_NETWORK_INFO, async (_e, id: string) => {
     try {
       const node = NodeService.get(id);
-      if (!node?.containerId) throw new Error('Container not running');
+      if (!node?.containerId) throw new AppError('CONTAINER_NOT_RUNNING');
       const container = docker.getContainer(node.containerId);
       const exec = await container.exec({
         Cmd: ['sh', '-c', 'ip addr 2>/dev/null; echo "§§§"; ip route 2>/dev/null'],
@@ -401,8 +399,8 @@ export function registerIpcHandlers(_win: BrowserWindow): void {
   // terminal is an entirely independent process.
   ipcMain.handle(IPC_CHANNELS.TERMINAL_OPEN_NATIVE, async (_e, nodeId: string) => {
     const node = NodeService.get(nodeId);
-    if (!node?.containerId) throw new Error(`Nodo ${nodeId} non trovato o non avviato`);
-    if (node.status !== 'running') throw new Error(`Il nodo "${node.name}" non è in esecuzione`);
+    if (!node?.containerId) throw new AppError('NODE_NOT_STARTED', { id: nodeId });
+    if (node.status !== 'running') throw new AppError('NODE_NOT_RUNNING', { name: node.name });
 
     try {
       await openNativeTerminal(node.containerId, node.name);

@@ -9,6 +9,7 @@ import { MessageService, ConfirmationService } from 'primeng/api';
 import { TranslateService, TranslatePipe } from '@ngx-translate/core';
 import { NetworkService } from '../../services/network.service';
 import { LabLink } from '../../../../../backend/models/link.model';
+import { parseAppError, translateAppError } from '../../shared/app-error';
 
 @Component({
   selector: 'app-link-list',
@@ -82,7 +83,7 @@ export class LinkListComponent {
         // Race between two windows: the check above missed it, but the
         // backend still rejects it — same inline treatment, not the
         // generic modal.
-        if (e.message.includes('già esistente')) {
+        if (parseAppError(e)?.code === 'LINK_ALREADY_EXISTS') {
           this.triggerNameError();
           return;
         }
@@ -114,7 +115,7 @@ export class LinkListComponent {
 
   private showError(e: Error): void {
     this.confirmationService.confirm({
-      message: e.message,
+      message: translateAppError(e, this.translate),
       header: this.translate.instant('error.title'),
       icon: 'pi pi-exclamation-triangle',
       acceptLabel: this.translate.instant('btn.ok'),

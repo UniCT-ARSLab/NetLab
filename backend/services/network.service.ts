@@ -6,6 +6,7 @@ import { DbService } from './db.service';
 import { NodeService } from './node.service';
 import { logger } from '../../electron/logger';
 import { LabLink } from '../models/link.model';
+import { AppError } from '../models/app-error';
 
 const NSENTER_HELPER_IMAGE = 'netlab-nsenter-helper:v2';
 const NSENTER_HELPER_DOCKERFILE = 'FROM alpine:3.20\nRUN apk add --no-cache util-linux iproute2\nENTRYPOINT ["nsenter"]\n';
@@ -132,7 +133,7 @@ export const NetworkService = {
   },
 
   async createLink(name: string): Promise<LabLink> {
-    if (links.has(name)) throw new Error(`Link "${name}" già esistente`);
+    if (links.has(name)) throw new AppError('LINK_ALREADY_EXISTS', { name });
 
     const network = await createDockerNetwork(name);
 
@@ -202,10 +203,10 @@ export const NetworkService = {
   // renaming of interfaces based on mac identification
   async attachInterface(nodeId: string, ifaceName: string, linkName: string): Promise<void> {
     const node = NodeService.get(nodeId);
-    if (!node || !node.containerId) throw new Error(`Nodo ${nodeId} non avviato`);
+    if (!node || !node.containerId) throw new AppError('NODE_NOT_STARTED', { id: nodeId });
 
     const link = links.get(linkName);
-    if (!link?.dockerNetworkId) throw new Error(`Link "${linkName}" non trovato`);
+    if (!link?.dockerNetworkId) throw new AppError('LINK_NOT_FOUND', { name: linkName });
 
     let network = docker.getNetwork(link.dockerNetworkId);
 
@@ -230,7 +231,7 @@ export const NetworkService = {
     if (!alreadyConnected) {
       const othersConnected = Object.keys(netInfo.Containers ?? {}).length;
       if (othersConnected >= 2) {
-        throw new Error(`Link "${linkName}" is already at capacity (max 2 nodes)`);
+        throw new AppError('LINK_AT_CAPACITY', { name: linkName });
       }
       try {
         await network.connect({ Container: node.containerId });
@@ -358,7 +359,7 @@ export const NetworkService = {
   // nat bridge for internet, sort of dhcp
   async createWanBridge(nodeId: string, wanIfaceName: string): Promise<void> {
     const node = NodeService.get(nodeId);
-    if (!node?.containerId) throw new Error(`Nodo ${nodeId} non ha un container`);
+    if (!node?.containerId) throw new AppError('NODE_HAS_NO_CONTAINER', { id: nodeId });
 
     const networkName = `netlab_wan_${nodeId}`;
 
@@ -447,12 +448,12 @@ export const NetworkService = {
 
   async deleteLink(name: string): Promise<void> {
     const link = links.get(name);
-    if (!link) throw new Error(`Link "${name}" non trovato`);
+    if (!link) throw new AppError('LINK_NOT_FOUND', { name });
 
     const usedBy = NodeService.list().filter(n => n.interfaces.some(i => i.linkName === name));
     if (usedBy.length > 0) {
-      const names = usedBy.map(n => `"${n.name}"`).join(', ');
-      throw new Error(`Impossibile eliminare il link "${name}": è ancora assegnato a ${usedBy.length === 1 ? 'questo nodo' : 'questi nodi'} (${names}). Rimuovi prima l'assegnazione dalle interfacce.`);
+      const nodeNames = usedBy.map(n => n.name).join(', ');
+      throw new AppError('LINK_IN_USE', { name, nodeNames });
     }
 
     if (link.dockerNetworkId) {
