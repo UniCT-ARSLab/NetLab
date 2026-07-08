@@ -11,7 +11,7 @@ export interface CreateNodeParams {
 }
 
 export const IPC_CHANNELS = {
-  // Nodi
+  // Nodes
   NODE_CREATE:  'node:create',
   NODE_UPDATE:  'node:update',
   NODE_START:   'node:start',
@@ -24,7 +24,7 @@ export const IPC_CHANNELS = {
   LINK_DELETE:  'link:delete',
   LINK_LIST:    'link:list',
 
-  // Terminale
+  // Terminal
   TERMINAL_OPEN_NATIVE: 'terminal:open-native',
 
   // Dialog

@@ -79,9 +79,9 @@ export class LinkListComponent {
         this.showCreateInput = false;
       },
       error: (e: Error) => {
-        // Race tra due finestre: il check sopra non l'ha visto, ma il
-        // backend rifiuta comunque — stesso trattamento inline, non il
-        // modale generico.
+        // Race between two windows: the check above missed it, but the
+        // backend still rejects it — same inline treatment, not the
+        // generic modal.
         if (e.message.includes('già esistente')) {
           this.triggerNameError();
           return;

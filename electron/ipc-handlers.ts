@@ -9,15 +9,15 @@ import { NetworkService } from '../backend/services/network.service';
 import { docker, isDockerAvailable } from '../backend/services/docker.client';
 import { logger } from './logger';
 
-// cmd.exe non capisce le virgolette singole come delimitatore di stringa:
-// tratterebbe il suo `&&` interno come proprio operatore invece che come
-// parte dell'argomento passato a `sh -c`. Serve il doppio apice lì.
+// cmd.exe doesn't understand single quotes as a string delimiter: it would
+// treat its own `&&` as its own operator instead of as part of the argument
+// passed to `sh -c`. Needs double quotes there.
 //
-// export TERM=screen: il .bashrc di default di Debian/Ubuntu resetta il
-// titolo della finestra (escape OSC-0) ogni volta che $TERM inizia per
-// "xterm"/"rxvt" — sovrascrivendo il titolo che abbiamo appena impostato.
-// "screen" non rientra in quel pattern mantenendo comunque un buon supporto
-// colori/terminfo, indipendentemente da quale file bashrc lo contenga.
+// export TERM=screen: Debian/Ubuntu's default .bashrc resets the window
+// title (OSC-0 escape) whenever $TERM starts with "xterm"/"rxvt" —
+// clobbering the title we just set. "screen" doesn't match that pattern
+// while still keeping decent color/terminfo support, regardless of which
+// bashrc file contains that logic.
 function buildDockerExecCommand(containerId: string, quote: '"' | "'" = "'"): string {
   const shellCmd = `export TERM=screen; command -v bash > /dev/null 2>&1 && exec bash || exec sh`;
   return `docker exec -it ${containerId} sh -c ${quote}${shellCmd}${quote}`;
@@ -32,9 +32,9 @@ function commandExists(cmd: string): boolean {
   }
 }
 
-// Apre il terminale nativo del sistema operativo collegato al container.
-// Nessun controllo sulla sessione una volta lanciata: è un processo
-// indipendente dall'app, esattamente come aprirlo a mano.
+// Opens the OS's native terminal attached to the container. No tracking of
+// the session once launched: it's a process independent from the app,
+// exactly as if the user had opened it by hand.
 async function openNativeTerminal(containerId: string, nodeName: string): Promise<void> {
   if (process.platform === 'darwin') {
     const dockerCmd = buildDockerExecCommand(containerId);
@@ -77,11 +77,11 @@ async function openNativeTerminal(containerId: string, nodeName: string): Promis
 
   const dockerCmd = buildDockerExecCommand(containerId);
   const linuxTerminals: Array<{ cmd: string; args: string[] }> = [
-    // Terminali specifici prima: supportano tutti un flag per il titolo.
-    // x-terminal-emulator (wrapper di update-alternatives, quasi sempre
-    // presente su Debian/Ubuntu) va per ultimo: non ha un flag di titolo
-    // affidabile e, se controllato per primo, avrebbe sempre la precedenza
-    // sulle voci sottostanti impedendo la rinomina.
+    // Specific terminals first: they all support a title flag.
+    // x-terminal-emulator (update-alternatives' wrapper, almost always
+    // present on Debian/Ubuntu) goes last: it has no reliable title flag,
+    // and if checked first it would always win over the entries below it,
+    // preventing the rename.
     { cmd: 'gnome-terminal', args: [`--title=${nodeName}`, '--', 'sh', '-c', dockerCmd] },
     { cmd: 'konsole', args: ['-p', `tabtitle=${nodeName}`, '-e', dockerCmd] },
     { cmd: 'xfce4-terminal', args: ['-T', nodeName, '-e', dockerCmd] },
@@ -199,7 +199,7 @@ function toUserError(e: unknown): Error {
 
 export function registerIpcHandlers(_win: BrowserWindow): void {
 
-  // FINESTRA
+  // WINDOW
 
   // Push maximize state to the renderer so the toolbar icon stays in sync
   const pushMaxState = (w: BrowserWindow, maximized: boolean) =>
@@ -256,7 +256,7 @@ export function registerIpcHandlers(_win: BrowserWindow): void {
 
   ipcMain.handle('docker:check', async () => isDockerAvailable());
 
-  // NODI 
+  // NODES
 
   ipcMain.handle(IPC_CHANNELS.NODE_LIST, async () => {
     return NodeService.list();
@@ -305,9 +305,9 @@ export function registerIpcHandlers(_win: BrowserWindow): void {
       const attachedIfaces = node.interfaces.filter(i => i.linkName).map(i => i.name);
       await NetworkService.applyInterfacesConfig(node.id, attachedIfaces);
 
-      // Nodi marcati come switch bridgano più reti Docker al loro interno:
-      // su Docker Desktop questo genera un loop L2 per via dell'hairpin mode
-      // (vedi commento in NetworkService.disableHairpinForSwitch).
+      // Nodes flagged as a switch bridge multiple Docker networks internally:
+      // on Docker Desktop this causes an L2 loop because of hairpin mode
+      // (see the comment in NetworkService.disableHairpinForSwitch).
       if (node.isSwitch) {
         await NetworkService.disableHairpinForSwitch(node.id);
       }
@@ -394,11 +394,11 @@ export function registerIpcHandlers(_win: BrowserWindow): void {
     }
   });
 
-  //TERMINALE
+  // TERMINAL
 
-  // Apre il terminale nativo del sistema operativo, collegato al container
-  // con `docker exec`. Nessuna sessione PTY gestita dall'app: una volta
-  // lanciato, il terminale è un processo del tutto indipendente.
+  // Opens the OS's native terminal, attached to the container via
+  // `docker exec`. No PTY session managed by the app: once launched, the
+  // terminal is an entirely independent process.
   ipcMain.handle(IPC_CHANNELS.TERMINAL_OPEN_NATIVE, async (_e, nodeId: string) => {
     const node = NodeService.get(nodeId);
     if (!node?.containerId) throw new Error(`Nodo ${nodeId} non trovato o non avviato`);

@@ -102,7 +102,7 @@ export class TopologyViewComponent implements OnChanges, AfterViewInit, OnDestro
     }
   }
 
-  // Ricalcola il layout da zero, come al primo caricamento della topologia.
+  // Recomputes the layout from scratch, same as on the topology's first load.
   resetLayout(): void {
     this.hasCentered   = false;
     this.hasManualDrag = false;
@@ -269,7 +269,7 @@ export class TopologyViewComponent implements OnChanges, AfterViewInit, OnDestro
     this.svgEl?.removeEventListener('wheel', this.wheelHandler);
   }
 
-  //Canvas pan
+  // Canvas pan
 
   onSvgMouseDown(event: MouseEvent): void {
     if (event.button !== 0) return;
@@ -283,7 +283,7 @@ export class TopologyViewComponent implements OnChanges, AfterViewInit, OnDestro
     if (!this.hasDragged) this.deselected.emit();
   }
 
-  //Node drag + click 
+  // Node drag + click
 
   onNodeMouseDown(node: NodePos, event: MouseEvent): void {
     event.stopPropagation(); // prevent canvas pan
@@ -303,7 +303,7 @@ export class TopologyViewComponent implements OnChanges, AfterViewInit, OnDestro
     this.nodeSelected.emit(node);
   }
 
-  //Shared document handlers 
+  // Shared document handlers
 
   @HostListener('document:mousemove', ['$event'])
   onMouseMove(event: MouseEvent): void {

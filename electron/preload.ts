@@ -58,7 +58,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on(CH.DATA_READY, () => cb());
   },
 
-  //NODI
+  // NODES
   listNodes: () => invoke(CH.NODE_LIST),
   createNode: (params: CreateNodeParams) => invoke(CH.NODE_CREATE, params),
   startNode: (id: string) => invoke(CH.NODE_START, id),
@@ -72,7 +72,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   createLink: (name: string) => invoke(CH.LINK_CREATE, name),
   deleteLink: (name: string) => invoke(CH.LINK_DELETE, name),
 
-  // TERMINALE
+  // TERMINAL
   openTerminalNative: (nodeId: string) =>
     invoke(CH.TERMINAL_OPEN_NATIVE, nodeId),
 

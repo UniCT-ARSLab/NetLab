@@ -19,7 +19,7 @@ declare global {
       onDockerUnavailable: (cb: () => void) => void;
       onDataReady: (cb: () => void) => void;
 
-      // Nodi
+      // Nodes
       listNodes: () => Promise<LabNode[]>;
       createNode: (params: CreateNodeParams) => Promise<LabNode>;
       updateNode: (id: string, params: CreateNodeParams) => Promise<LabNode>;
@@ -33,7 +33,7 @@ declare global {
       createLink: (name: string) => Promise<LabLink>;
       deleteLink: (name: string) => Promise<void>;
 
-      // Terminale - terminale nativo del sistema operativo
+      // Terminal - native OS terminal
       openTerminalNative: (nodeId: string) => Promise<void>;
 
       // Dialog

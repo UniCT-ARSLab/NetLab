@@ -186,9 +186,9 @@ export class MainLayoutComponent implements OnInit {
   onNodeCreated(): void {
     this.showCreateDialog = false;
     this.messageService.add({ severity: 'success', summary: this.t('node.created'), life: 3000 });
-    // Interfacce assegnate a un link cambiano il suo connectedNodes anche
-    // senza avviare il nodo — i link vanno ricaricati anche qui, non solo
-    // dopo start/stop.
+    // Assigning an interface to a link changes its connectedNodes even
+    // without starting the node — links need reloading here too, not just
+    // after start/stop.
     this.networkService.loadLinks().subscribe();
   }
 
@@ -289,9 +289,9 @@ export class MainLayoutComponent implements OnInit {
     this.netInfoError.set(null);
   }
 
-  // Errori bloccanti (azione impossibile/da rivedere) meritano un dialogo che
-  // l'utente chiude esplicitamente, non un toast che sparisce da solo dopo
-  // pochi secondi mentre magari si sta ancora leggendo.
+  // Blocking errors (impossible action/needs review) deserve a dialog the
+  // user closes explicitly, not a toast that disappears on its own after a
+  // few seconds while they might still be reading it.
   private showError(e: Error): void {
     this.confirmationService.confirm({
       message: e.message,

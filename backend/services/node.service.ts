@@ -12,8 +12,8 @@ const LABEL_MANAGED  = 'netlab.managed';
 const LABEL_NODE_ID  = 'netlab.node-id';
 const LABEL_NODE_NAME = 'netlab.node-name';
 
-// Stesso set di strumenti di rete su tutte e tre le distro, così il
-// comportamento non cambia in base all'immagine scelta dallo studente.
+// Same network toolset across all three distros, so behavior doesn't change
+// depending on which image the student picks.
 const CUSTOM_IMAGE_PACKAGES_APT = 'iproute2 iptables bridge-utils tcpdump ethtool iputils-ping dnsutils curl wget vim nano traceroute';
 const CUSTOM_IMAGE_PACKAGES_APK = 'iproute2 iptables bridge-utils tcpdump ethtool iputils bind-tools curl wget vim nano traceroute';
 
@@ -29,11 +29,11 @@ function persist(): void {
   DbService.persistNodes(Array.from(nodes.values()));
 }
 
-// Un container NetLab orfano (managed da noi, ma il cui id non è più
-// tracciato da nessun nodo — es. DB cancellato/corrotto, o rimosso a mano
-// mantenendo il nome) può bloccare la creazione di un nuovo container con
-// lo stesso nome. Se è davvero nostro e non appartiene a un altro nodo
-// attivo, lo rimuoviamo e si riprova, invece di restare bloccati per sempre.
+// An orphaned NetLab container (managed by us, but whose id is no longer
+// tracked by any node — e.g. a wiped/corrupted DB, or removed by hand while
+// keeping the name) can block creating a new container with the same name.
+// If it's really ours and doesn't belong to another active node, remove it
+// and retry instead of staying stuck forever.
 async function removeOrphanedContainerByName(name: string): Promise<boolean> {
   const all = await docker.listContainers({ all: true });
   const match = all.find(c => c.Names.some(n => n === `/${name}`));
@@ -61,11 +61,10 @@ async function ensureCustomImageBuilt(tag: string, dockerfile: string): Promise<
   }
 }
 
-// Le immagini custom sono buildate localmente, non pullabili da un registry:
-// se un'immagine risulta mancante allo start di un nodo (l'utente potrebbe
-// averla cancellata dopo l'avvio dell'app, es. "docker image prune"), va
-// ricostruita, non "pullata" — altrimenti dockerode fallirebbe cercando un
-// repository che non esiste.
+// Custom images are built locally, not pullable from a registry: if one is
+// missing when a node starts (the user could have deleted it after the app
+// launched, e.g. "docker image prune"), it needs to be rebuilt, not pulled —
+// otherwise dockerode would fail looking for a repository that doesn't exist.
 async function ensureImagePresent(image: string): Promise<void> {
   const customDockerfile = CUSTOM_IMAGES[image];
   if (customDockerfile) {
@@ -90,8 +89,8 @@ export const NodeService = {
     nodes = new Map(DbService.getNodes().map(n => [n.id, n]));
   },
 
-  // Buildate all'avvio dell'app (non pigramente alla prima creazione nodo),
-  // così lo studente non aspetta mai durante un esercizio in corso.
+  // Built at app startup (not lazily on first node creation), so the
+  // student never waits in the middle of an in-progress exercise.
   async ensureCustomImagesBuilt(): Promise<void> {
     for (const [tag, dockerfile] of Object.entries(CUSTOM_IMAGES)) {
       try {
@@ -133,8 +132,8 @@ export const NodeService = {
       nodes.set(id, node);
     }
 
-    //import containers that carry the netlab label but are not in the DB
-    //happens when the user data directory is wiped while Docker containers remain
+    // import containers that carry the netlab label but are not in the DB
+    // happens when the user data directory is wiped while Docker containers remain
     const knownIds  = new Set(Array.from(nodes.values()).map(n => n.containerId).filter(Boolean));
     const knownNames = new Set(Array.from(nodes.values()).map(n => n.name));
 
@@ -274,10 +273,10 @@ export const NodeService = {
     try {
       container = await docker.createContainer(containerOptions);
     } catch (e: any) {
-      // Un container NetLab orfano con lo stesso nome (DB disallineato da
-      // manipolazioni esterne a Docker) blocca la creazione col classico 409
-      // "name already in use" — se è davvero nostro e non di un altro nodo
-      // attivo, lo ripuliamo e riproviamo una sola volta.
+      // An orphaned NetLab container with the same name (DB out of sync
+      // because of manipulation outside Docker) blocks creation with the
+      // classic 409 "name already in use" — if it's really ours and not
+      // another active node's, clean it up and retry once.
       if (e?.statusCode !== 409 || !(await removeOrphanedContainerByName(node.name))) throw e;
       container = await docker.createContainer(containerOptions);
     }

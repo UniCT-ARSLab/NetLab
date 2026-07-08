@@ -52,14 +52,14 @@ async function createWindow(): Promise<void> {
     return;
   }
 
-  // Fire-and-forget: gira in background, i chiamanti che ne hanno davvero
-  // bisogno (creazione container) aspettano la stessa promise cachata.
+  // Fire-and-forget: runs in the background, the callers that actually need
+  // it (container creation) await the same cached promise.
   NetworkService.ensureFallbackTunnelsDisabled();
 
-  // riconciliazione db/docker + build delle immagini custom (alpine/debian/
-  // ubuntu con gli strumenti di rete). Le immagini vengono buildate qui,
-  // non alla prima creazione di un nodo, così lo studente non aspetta mai
-  // a metà di un esercizio — solo il primo avvio dell'app sarà più lento.
+  // DB/Docker reconciliation + building the custom images (alpine/debian/
+  // ubuntu with the network tools). Images are built here, not on first
+  // node creation, so the student never waits mid-exercise — only the
+  // app's first launch will be slower.
   Promise.all([
     NetworkService.reconcile(),
     NodeService.reconcileContainers(),

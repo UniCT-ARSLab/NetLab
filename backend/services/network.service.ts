@@ -173,12 +173,12 @@ export const NetworkService = {
     logger.info(`[disableFallbackTunnels] exit=${StatusCode} output=${Buffer.concat(chunks).toString('utf8').trim()}`);
   },
 
-  // Interfacce senza link assegnato non hanno nessuna Docker network a cui
-  // agganciarsi: creiamo un'interfaccia dummy per farla comunque comparire
-  // in "ip a" (una scheda di rete con il cavo scollegato), inerte a tutti
-  // gli effetti. Se in seguito lo studente assegna un link, attachInterface
-  // trova già occupato quel nome e lo gestisce con lo stesso meccanismo
-  // usato per i conflitti di rinomina (sposta l'occupante su eth_tmp).
+  // An interface with no link assigned has no Docker network to join, so we
+  // give it a dummy interface just so it still shows up in "ip a" (a NIC
+  // with the cable unplugged), inert in every practical sense. If the
+  // student later assigns a link, attachInterface finds that name already
+  // taken and handles it with the same mechanism used for rename conflicts
+  // (bumps the occupant to eth_tmp).
   async createDummyInterface(nodeId: string, ifaceName: string): Promise<void> {
     const node = NodeService.get(nodeId);
     if (!node?.containerId) return;
@@ -209,10 +209,10 @@ export const NetworkService = {
 
     let network = docker.getNetwork(link.dockerNetworkId);
 
-    // Se qualcuno ha cancellato la rete Docker da fuori l'app (es. da
-    // terminale) tra un avvio e l'altro, ricreiamola al volo invece di
-    // fallire in loop ogni volta: è una risorsa di nostra proprietà,
-    // riproducibile identica (stesso nome, stesse opzioni).
+    // If someone deleted the Docker network from outside the app (e.g. via
+    // terminal) between one start and the next, recreate it on the fly
+    // instead of failing in a loop forever: it's a resource we own,
+    // reproducible identically (same name, same options).
     let netInfo;
     try {
       netInfo = await network.inspect();
@@ -292,14 +292,15 @@ export const NetworkService = {
     });
   },
 
-  // Docker Desktop (macOS/Windows) non usa docker-proxy, quindi abilita hairpin
-  // mode sulle veth delle sue bridge. Su un nodo che fa da bridge L2 tra due
-  // reti Docker questo trasforma il flooding normale in un loop infinito: ogni
-  // bridge host-level riflette indietro sulla stessa porta i frame che il
-  // container ha appena inoltrato sull'altra. Spegniamo l'hairpin sulle veth
-  // host-side delle interfacce del nodo dopo ogni avvio (le veth cambiano ad
-  // ogni riavvio del container, va rifatto ogni volta). Su Linux nativo hairpin
-  // è già off di default: qui è un no-op innocuo.
+  // Docker Desktop (macOS/Windows) doesn't use docker-proxy, so it enables
+  // hairpin mode on its bridges' veths. On a node acting as an L2 bridge
+  // between two Docker networks, this turns normal flooding into an
+  // infinite loop: every host-level bridge reflects back on the same port
+  // the frames the container just forwarded out the other one. We disable
+  // hairpin on the node's interfaces' host-side veths after every start
+  // (veths change on every container restart, so this has to be redone
+  // each time). On native Linux hairpin is already off by default: this is
+  // a harmless no-op there.
   async disableHairpinForSwitch(nodeId: string): Promise<void> {
     const node = NodeService.get(nodeId);
     if (!node?.containerId) return;
