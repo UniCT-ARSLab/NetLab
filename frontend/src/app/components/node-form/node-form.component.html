@@ -17,7 +17,10 @@
         [class.ng-invalid]="nameError" [class.ng-dirty]="nameError"
         [placeholder]="'form.name-placeholder' | translate" [fluid]="true" />
       @if (nameError) {
-        <small class="field-error">{{ 'form.name-duplicate-error' | translate }}</small>
+        <small class="field-error">
+          <i class="pi pi-times-circle"></i>
+          <span>{{ 'form.name-duplicate-error' | translate }}</span>
+        </small>
       }
     </div>
 

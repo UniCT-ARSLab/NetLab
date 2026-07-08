@@ -29,7 +29,15 @@
 }
 
 .field-error {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
   color: var(--p-red-500, #ef4444);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.field-error .pi {
   font-size: 0.8rem;
 }
 

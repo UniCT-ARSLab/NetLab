@@ -33,7 +33,9 @@
           {{ (link.connectedNodes.length === 1 ? 'links.node' : 'links.nodes') | translate }}
         </span>
         <p-button icon="pi pi-trash" severity="danger" [text]="true"
-          size="small" (onClick)="deleteLink.emit(link.name)" />
+          size="small" [disabled]="link.connectedNodes.length > 0"
+          [pTooltip]="link.connectedNodes.length > 0 ? ('links.in-use-tooltip' | translate) : ''"
+          (onClick)="deleteLink.emit(link.name)" />
       </div>
     }
   </div>

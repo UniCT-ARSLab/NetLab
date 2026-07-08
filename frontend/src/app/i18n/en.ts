@@ -65,6 +65,7 @@ export const en: Record<string, string> = {
   'links.node': 'node',
   'links.nodes': 'nodes',
   'links.placeholder': 'e.g. linkA',
+  'links.in-use-tooltip': 'Remove it from the assigned interfaces first',
   'links.created-suffix': ' created',
   'links.deleted-suffix': ' deleted',
 

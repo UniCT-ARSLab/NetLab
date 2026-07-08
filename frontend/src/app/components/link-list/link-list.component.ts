@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Button } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
+import { TooltipModule } from 'primeng/tooltip';
 import { TranslatePipe } from '@ngx-translate/core';
 import { NetworkService } from '../../services/network.service';
 import { LabLink } from '../../../../../backend/models/link.model';
@@ -11,7 +12,7 @@ import { LabLink } from '../../../../../backend/models/link.model';
 @Component({
   selector: 'app-link-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, Button, InputText, TranslatePipe],
+  imports: [CommonModule, FormsModule, Button, InputText, TooltipModule, TranslatePipe],
   styleUrl: './link-list.component.css',
   templateUrl: './link-list.component.html',
 })
