@@ -17,18 +17,10 @@ const LABEL_NODE_NAME = 'netlab.node-name';
 const CUSTOM_IMAGE_PACKAGES_APT = 'iproute2 iptables bridge-utils tcpdump ethtool iputils-ping dnsutils curl wget vim nano traceroute';
 const CUSTOM_IMAGE_PACKAGES_APK = 'iproute2 iptables bridge-utils tcpdump ethtool iputils bind-tools curl wget vim nano traceroute';
 
-// Debian/Ubuntu ship a default root .bashrc whose xterm-title line
-// (PS1="\[\e]0;...${debian_chroot}...\a\]$PS1") resets the terminal window
-// title the moment an interactive shell starts, clobbering the title NetLab
-// just set when opening the terminal. Matching on "debian_chroot" (a plain
-// substring unique to that line) sidesteps any ambiguity around how sed
-// itself interprets \e in a pattern. Harmless if the file/line is absent.
-const STRIP_BASHRC_TITLE_ESCAPE = `RUN [ -f /root/.bashrc ] && sed -i '/debian_chroot.*PS1=/d' /root/.bashrc || true\n`;
-
 const CUSTOM_IMAGES: Record<string, string> = {
   'netlab-alpine:v1': `FROM alpine:3.20\nRUN apk add --no-cache ${CUSTOM_IMAGE_PACKAGES_APK}\n`,
-  'netlab-debian:v2': `FROM debian:bookworm-slim\nRUN apt-get update && apt-get install -y --no-install-recommends ${CUSTOM_IMAGE_PACKAGES_APT} && rm -rf /var/lib/apt/lists/*\n${STRIP_BASHRC_TITLE_ESCAPE}`,
-  'netlab-ubuntu:v2': `FROM ubuntu:24.04\nRUN apt-get update && apt-get install -y --no-install-recommends ${CUSTOM_IMAGE_PACKAGES_APT} && rm -rf /var/lib/apt/lists/*\n${STRIP_BASHRC_TITLE_ESCAPE}`,
+  'netlab-debian:v1': `FROM debian:bookworm-slim\nRUN apt-get update && apt-get install -y --no-install-recommends ${CUSTOM_IMAGE_PACKAGES_APT} && rm -rf /var/lib/apt/lists/*\n`,
+  'netlab-ubuntu:v1': `FROM ubuntu:24.04\nRUN apt-get update && apt-get install -y --no-install-recommends ${CUSTOM_IMAGE_PACKAGES_APT} && rm -rf /var/lib/apt/lists/*\n`,
 };
 
 let nodes = new Map<string, LabNode>();

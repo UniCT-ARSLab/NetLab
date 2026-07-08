@@ -19,6 +19,23 @@ const CH = {
   DIALOG_OPEN_FOLDER:   'dialog:open-folder',
 } as const;
 
+// Electron prefixes every rejected ipcRenderer.invoke() with
+// "Error invoking remote method '<channel>': " followed by the original
+// error's own "Error: <message>" — this leaks straight into the UI unless
+// stripped here, the one place we see the raw rejection before it reaches
+// the renderer's application code.
+function cleanIpcError(e: unknown): Error {
+  const raw = e instanceof Error ? e.message : String(e);
+  const cleaned = raw
+    .replace(/^Error invoking remote method '[^']*':\s*/, '')
+    .replace(/^Error:\s*/, '');
+  return new Error(cleaned || raw);
+}
+
+function invoke(channel: string, ...args: unknown[]): Promise<any> {
+  return ipcRenderer.invoke(channel, ...args).catch((e: unknown) => { throw cleanIpcError(e); });
+}
+
 contextBridge.exposeInMainWorld('electronAPI', {
 
   platform: process.platform,
@@ -32,8 +49,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
 
 
-  //  DOCKER 
-  checkDocker: () => ipcRenderer.invoke(CH.DOCKER_CHECK),
+  //  DOCKER
+  checkDocker: () => invoke(CH.DOCKER_CHECK),
   onDockerUnavailable: (cb: () => void) => {
     ipcRenderer.on(CH.DOCKER_UNAVAILABLE, () => cb());
   },
@@ -41,24 +58,24 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on(CH.DATA_READY, () => cb());
   },
 
-  //NODI 
-  listNodes: () => ipcRenderer.invoke(CH.NODE_LIST),
-  createNode: (params: CreateNodeParams) => ipcRenderer.invoke(CH.NODE_CREATE, params),
-  startNode: (id: string) => ipcRenderer.invoke(CH.NODE_START, id),
-  stopNode: (id: string) => ipcRenderer.invoke(CH.NODE_STOP, id),
-  updateNode: (id: string, params: CreateNodeParams) => ipcRenderer.invoke(CH.NODE_UPDATE, id, params),
-  deleteNode: (id: string) => ipcRenderer.invoke(CH.NODE_DELETE, id),
-  getNetworkInfo: (id: string) => ipcRenderer.invoke(CH.NODE_NETWORK_INFO, id),
+  //NODI
+  listNodes: () => invoke(CH.NODE_LIST),
+  createNode: (params: CreateNodeParams) => invoke(CH.NODE_CREATE, params),
+  startNode: (id: string) => invoke(CH.NODE_START, id),
+  stopNode: (id: string) => invoke(CH.NODE_STOP, id),
+  updateNode: (id: string, params: CreateNodeParams) => invoke(CH.NODE_UPDATE, id, params),
+  deleteNode: (id: string) => invoke(CH.NODE_DELETE, id),
+  getNetworkInfo: (id: string) => invoke(CH.NODE_NETWORK_INFO, id),
 
-  // LINK 
-  listLinks: ()  => ipcRenderer.invoke(CH.LINK_LIST),
-  createLink: (name: string) => ipcRenderer.invoke(CH.LINK_CREATE, name),
-  deleteLink: (name: string) => ipcRenderer.invoke(CH.LINK_DELETE, name),
+  // LINK
+  listLinks: ()  => invoke(CH.LINK_LIST),
+  createLink: (name: string) => invoke(CH.LINK_CREATE, name),
+  deleteLink: (name: string) => invoke(CH.LINK_DELETE, name),
 
   // TERMINALE
   openTerminalNative: (nodeId: string) =>
-    ipcRenderer.invoke(CH.TERMINAL_OPEN_NATIVE, nodeId),
+    invoke(CH.TERMINAL_OPEN_NATIVE, nodeId),
 
   openFolderDialog: (): Promise<string | null> =>
-    ipcRenderer.invoke(CH.DIALOG_OPEN_FOLDER),
+    invoke(CH.DIALOG_OPEN_FOLDER),
 });

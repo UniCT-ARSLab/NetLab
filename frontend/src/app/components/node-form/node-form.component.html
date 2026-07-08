@@ -13,8 +13,12 @@
 
     <div class="field">
       <label for="nodeName">{{ 'form.name-label' | translate }}</label>
-      <input pInputText id="nodeName" [(ngModel)]="name"
+      <input pInputText id="nodeName" [(ngModel)]="name" (ngModelChange)="nameError = false"
+        [class.ng-invalid]="nameError" [class.ng-dirty]="nameError"
         [placeholder]="'form.name-placeholder' | translate" [fluid]="true" />
+      @if (nameError) {
+        <small class="field-error">{{ 'form.name-duplicate-error' | translate }}</small>
+      }
     </div>
 
     <div class="field">
@@ -162,6 +166,7 @@
     <p-button
       [label]="editNode ? ('btn.save' | translate) : ('btn.create-node' | translate)"
       [icon]="editNode ? 'pi pi-check' : 'pi pi-plus'"
+      [class.btn-shake]="nameErrorShake"
       (onClick)="submit()"
       [disabled]="!isValid()" />
   </ng-template>

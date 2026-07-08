@@ -40,6 +40,7 @@ export const en: Record<string, string> = {
   'form.edit-title-prefix': 'Edit node — ',
   'form.name-label': 'Node name',
   'form.name-placeholder': 'e.g. router1',
+  'form.name-duplicate-error': 'Name already in use',
   'form.image-label': 'Docker image',
   'form.advanced': 'Advanced',
   'form.ram-label': 'RAM (MB)',

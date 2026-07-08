@@ -68,6 +68,8 @@ export class NodeFormComponent implements OnChanges {
   readonly imageOptions = IMAGE_OPTIONS;
 
   name           = '';
+  nameError      = false;
+  nameErrorShake = false;
   image          = 'nicolaka/netshoot';
   showAdvanced = false;
   limitCpu       = false;
@@ -88,6 +90,8 @@ export class NodeFormComponent implements OnChanges {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['visible']?.currentValue === true) {
+      this.nameError = false;
+      this.nameErrorShake = false;
       if (this.editNode) {
         this.name       = this.editNode.name;
         this.image      = this.editNode.image;
@@ -154,8 +158,14 @@ export class NodeFormComponent implements OnChanges {
 
   submit(): void {
     if (!this.isValid()) return;
+    const trimmedName = this.name.trim();
+    const duplicate = this.allNodes().some(n => n.id !== this.editNode?.id && n.name === trimmedName);
+    if (duplicate) {
+      this.triggerNameError();
+      return;
+    }
     const params = {
-      name:       this.name.trim(),
+      name:       trimmedName,
       image:      this.image,
       cpuLimit:   this.limitCpu ? this.cpuLimit : undefined,
       memoryMb:   this.limitMemory ? this.memoryMb : undefined,
@@ -169,14 +179,37 @@ export class NodeFormComponent implements OnChanges {
     if (this.editNode) {
       this.nodeService.updateNode(this.editNode.id, params).subscribe({
         next: () => this.nodeUpdated.emit(),
-        error: (e: Error) => this.showError(e),
+        error: (e: Error) => this.handleSubmitError(e),
       });
     } else {
       this.nodeService.createNode(params).subscribe({
         next: () => { this.reset(); this.nodeCreated.emit(); },
-        error: (e: Error) => this.showError(e),
+        error: (e: Error) => this.handleSubmitError(e),
       });
     }
+  }
+
+  // Same-name race between two windows: the client-side check above misses
+  // it, but the backend still rejects — surface it the same inline way
+  // instead of falling back to the generic modal.
+  private handleSubmitError(e: Error): void {
+    if (e.message.includes('Esiste già un nodo')) {
+      this.triggerNameError();
+      return;
+    }
+    this.showError(e);
+  }
+
+  // The shake class is added and removed around the animation's duration so
+  // it replays every time (a static true/true toggle wouldn't restart a CSS
+  // animation), while nameError itself stays on to keep the inline text.
+  private triggerNameError(): void {
+    this.nameError = true;
+    this.nameErrorShake = false;
+    setTimeout(() => {
+      this.nameErrorShake = true;
+      setTimeout(() => { this.nameErrorShake = false; }, 400);
+    });
   }
 
   private showError(e: Error): void {
@@ -192,7 +225,7 @@ export class NodeFormComponent implements OnChanges {
   }
 
   private reset(): void {
-    this.name = ''; this.image = 'nicolaka/netshoot';
+    this.name = ''; this.nameError = false; this.image = 'nicolaka/netshoot';
     this.showAdvanced = false;
     this.limitCpu = false; this.limitMemory = false;
     this.cpuLimit = 1.0; this.memoryMb = 256;

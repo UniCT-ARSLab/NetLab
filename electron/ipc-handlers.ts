@@ -12,8 +12,14 @@ import { logger } from './logger';
 // cmd.exe non capisce le virgolette singole come delimitatore di stringa:
 // tratterebbe il suo `&&` interno come proprio operatore invece che come
 // parte dell'argomento passato a `sh -c`. Serve il doppio apice lì.
+//
+// export TERM=screen: il .bashrc di default di Debian/Ubuntu resetta il
+// titolo della finestra (escape OSC-0) ogni volta che $TERM inizia per
+// "xterm"/"rxvt" — sovrascrivendo il titolo che abbiamo appena impostato.
+// "screen" non rientra in quel pattern mantenendo comunque un buon supporto
+// colori/terminfo, indipendentemente da quale file bashrc lo contenga.
 function buildDockerExecCommand(containerId: string, quote: '"' | "'" = "'"): string {
-  const shellCmd = `command -v bash > /dev/null 2>&1 && exec bash || exec sh`;
+  const shellCmd = `export TERM=screen; command -v bash > /dev/null 2>&1 && exec bash || exec sh`;
   return `docker exec -it ${containerId} sh -c ${quote}${shellCmd}${quote}`;
 }
 

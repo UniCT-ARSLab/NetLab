@@ -28,6 +28,29 @@
   color: var(--p-orange-500, #f59e0b);
 }
 
+.field-error {
+  color: var(--p-red-500, #ef4444);
+  font-size: 0.8rem;
+}
+
+@keyframes btn-shake {
+  0%   { transform: translateX(0); }
+  20%  { transform: translateX(-4px); }
+  40%  { transform: translateX(4px); }
+  60%  { transform: translateX(-3px); }
+  80%  { transform: translateX(3px); }
+  100% { transform: translateX(0); }
+}
+
+/* Transient class, added and removed by the component around the animation
+   duration — the red background is only ever applied while it's present,
+   so the button reverts to its normal color on its own once it's removed. */
+:host ::ng-deep .btn-shake .p-button {
+  animation: btn-shake 0.4s ease-in-out;
+  background: var(--p-red-500, #ef4444) !important;
+  border-color: var(--p-red-500, #ef4444) !important;
+}
+
 .field-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -140,9 +163,15 @@
   flex-shrink: 0;
   display: flex;
   align-items: center;
+  height: 2.5rem;
+  padding: 0 0.75rem;
+  border: 1px solid var(--p-content-border-color);
+  border-radius: 6px;
+  background: var(--p-content-background);
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--p-text-muted-color);
+  box-sizing: border-box;
 }
 
 .iface-row__link {

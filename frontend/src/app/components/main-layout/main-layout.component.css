@@ -1,3 +1,13 @@
+/* PrimeNG's confirm dialog message has no wrapping/width constraint of its
+   own by default, so a long error sentence stretches the dialog instead of
+   wrapping — this is the single <p-confirmDialog> shared by the whole app
+   (including confirmationService.confirm() calls from child components). */
+::ng-deep .p-confirmdialog .p-confirmdialog-message {
+  white-space: normal;
+  overflow-wrap: break-word;
+  max-width: 380px;
+}
+
 .docker-gate {
   position: fixed;
   inset: 0;
