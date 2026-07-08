@@ -249,12 +249,12 @@
   pointer-events: all;
 }
 
-/* Back breadcrumb  */
+/* Detail panel header */
 .card-nav {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.625rem 1.25rem;
+  gap: 0.75rem;
+  padding: 0.75rem 1.25rem;
   border-bottom: 1px solid #3f3f46;
   background: var(--p-surface-0);
   flex-shrink: 0;
@@ -263,36 +263,48 @@
 .card-nav__back {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.4rem;
   background: none;
-  border: none;
-  color: var(--p-primary-color);
-  font-size: 0.85rem;
-  font-weight: 500;
+  border: 1px solid var(--p-surface-border);
+  color: var(--p-text-muted-color);
+  font-size: 0.8rem;
+  font-weight: 600;
   cursor: pointer;
-  padding: 0.2rem 0.4rem;
-  border-radius: 5px;
-  transition: background 0.15s;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
   font-family: inherit;
 }
 
 .card-nav__back:hover {
-  background: color-mix(in srgb, var(--p-primary-color) 12%, transparent);
+  border-color: var(--p-primary-color);
+  color: var(--p-primary-color);
+  background: color-mix(in srgb, var(--p-primary-color) 10%, transparent);
 }
 
 .card-nav__back .pi {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
 }
 
-.card-nav__sep {
-  color: #52525b;
-  font-size: 0.8rem;
+.card-nav__divider {
+  width: 1px;
+  height: 18px;
+  background: #3f3f46;
+}
+
+.card-nav__icon {
+  font-size: 0.9rem;
+  color: var(--p-text-muted-color);
 }
 
 .card-nav__current {
-  font-size: 0.85rem;
-  font-weight: 500;
+  font-size: 0.9rem;
+  font-weight: 600;
   color: #fafafa;
+}
+
+.card-nav__status {
+  margin-left: auto;
 }
 
 /* ── Card content area ───────────────────────────────── */
