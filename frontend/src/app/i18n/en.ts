@@ -41,6 +41,8 @@ export const en: Record<string, string> = {
   'form.name-placeholder': 'e.g. router1',
   'form.image-label': 'Docker image',
   'form.resources': 'Resources',
+  'form.resource-options': 'Options',
+  'form.resources-unlimited-hint': 'No limit set: the container can use all host CPU/RAM. Click "Options" to cap them.',
   'form.ram-label': 'RAM (MB)',
   'form.cpu-label': 'CPU (cores)',
   'form.interfaces-section': 'Network interfaces',

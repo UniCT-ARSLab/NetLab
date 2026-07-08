@@ -11,6 +11,7 @@ import { InputText } from 'primeng/inputtext';
 import { InputNumber } from 'primeng/inputnumber';
 import { Divider } from 'primeng/divider';
 import { ToggleSwitch } from 'primeng/toggleswitch';
+import { Checkbox } from 'primeng/checkbox';
 import { MessageService } from 'primeng/api';
 import { TooltipModule } from 'primeng/tooltip';
 import { TranslateService, TranslatePipe } from '@ngx-translate/core';
@@ -25,7 +26,7 @@ interface MountRow     { hostPath: string; containerPath: string; }
 @Component({
   selector: 'app-node-form',
   standalone: true,
-  imports: [CommonModule, FormsModule, Dialog, Button, Select, InputText, InputNumber, Divider, ToggleSwitch, TooltipModule, TranslatePipe],
+  imports: [CommonModule, FormsModule, Dialog, Button, Select, InputText, InputNumber, Divider, ToggleSwitch, Checkbox, TooltipModule, TranslatePipe],
   styleUrl: './node-form.component.css',
   templateUrl: './node-form.component.html',
 })
@@ -69,6 +70,9 @@ export class NodeFormComponent implements OnChanges {
 
   name           = '';
   image          = 'nicolaka/netshoot';
+  showResourceOptions = false;
+  limitCpu       = false;
+  limitMemory    = false;
   cpuLimit       = 1.0;
   memoryMb       = 256;
   interfaces: InterfaceRow[] = [];
@@ -88,8 +92,11 @@ export class NodeFormComponent implements OnChanges {
       if (this.editNode) {
         this.name       = this.editNode.name;
         this.image      = this.editNode.image;
-        this.cpuLimit   = this.editNode.cpuLimit  ?? 1.0;
-        this.memoryMb   = this.editNode.memoryMb  ?? 256;
+        this.limitCpu    = this.editNode.cpuLimit != null;
+        this.limitMemory = this.editNode.memoryMb != null;
+        this.cpuLimit    = this.editNode.cpuLimit  ?? 1.0;
+        this.memoryMb    = this.editNode.memoryMb  ?? 256;
+        this.showResourceOptions = this.limitCpu || this.limitMemory;
         this.interfaces    = this.editNode.interfaces.map((i) => ({ ...i }));
         this.mounts        = (this.editNode.mounts ?? []).map((m) => ({ ...m }));
         this.internetFacing = this.editNode.internetFacing ?? false;
@@ -143,8 +150,8 @@ export class NodeFormComponent implements OnChanges {
     const params = {
       name:       this.name.trim(),
       image:      this.image,
-      cpuLimit:   this.cpuLimit,
-      memoryMb:   this.memoryMb,
+      cpuLimit:   this.limitCpu ? this.cpuLimit : undefined,
+      memoryMb:   this.limitMemory ? this.memoryMb : undefined,
       interfaces:     this.interfaces.filter((i) => i.name.trim()).map((i) => ({ name: i.name.trim(), linkName: i.linkName })),
       mounts:         this.mounts.filter((m) => m.hostPath && m.containerPath),
       internetFacing: this.internetFacing,
@@ -171,6 +178,8 @@ export class NodeFormComponent implements OnChanges {
 
   private reset(): void {
     this.name = ''; this.image = 'nicolaka/netshoot';
+    this.showResourceOptions = false;
+    this.limitCpu = false; this.limitMemory = false;
     this.cpuLimit = 1.0; this.memoryMb = 256;
     this.interfaces = []; this.mounts = [];
     this.internetFacing = false;
