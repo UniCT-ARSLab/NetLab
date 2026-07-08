@@ -249,29 +249,29 @@
   pointer-events: all;
 }
 
-/* Detail panel header */
+/* Detail panel header — sits over the canvas' light surface, not the app's
+   dark theme, so colors here are tuned for a light background. */
 .card-nav {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1.25rem;
-  border-bottom: 1px solid #3f3f46;
-  background: var(--p-surface-0);
+  padding: 0.875rem 1.25rem;
+  border-bottom: 1px solid #d4d4d8;
+  background: #ffffff;
   flex-shrink: 0;
 }
 
 .card-nav__back {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  background: none;
-  border: 1px solid var(--p-surface-border);
-  color: var(--p-text-muted-color);
-  font-size: 0.8rem;
+  gap: 0.5rem;
+  background: #f4f4f5;
+  border: 1px solid #d4d4d8;
+  color: #27272a;
+  font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  padding: 0.35rem 0.7rem;
-  border-radius: 999px;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
   transition: border-color 0.15s, color 0.15s, background 0.15s;
   font-family: inherit;
 }
@@ -283,28 +283,7 @@
 }
 
 .card-nav__back .pi {
-  font-size: 0.7rem;
-}
-
-.card-nav__divider {
-  width: 1px;
-  height: 18px;
-  background: #3f3f46;
-}
-
-.card-nav__icon {
-  font-size: 0.9rem;
-  color: var(--p-text-muted-color);
-}
-
-.card-nav__current {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #fafafa;
-}
-
-.card-nav__status {
-  margin-left: auto;
+  font-size: 0.8rem;
 }
 
 /* ── Card content area ───────────────────────────────── */

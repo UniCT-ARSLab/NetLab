@@ -94,13 +94,6 @@
               <i class="pi pi-arrow-left"></i>
               {{ 'topo.back' | translate }}
             </button>
-            <div class="card-nav__divider"></div>
-            <i class="pi pi-server card-nav__icon"></i>
-            <span class="card-nav__current">{{ selectedNode()?.name }}</span>
-            @if (selectedNode()) {
-              <p-tag [value]="selectedNode()!.status" [severity]="statusSeverity(selectedNode()!.status)"
-                class="card-nav__status" />
-            }
           </div>
 
           @if (selectedNode()) {
