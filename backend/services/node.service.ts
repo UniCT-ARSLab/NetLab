@@ -1,3 +1,6 @@
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { docker } from './docker.client';
 import { DbService } from './db.service';
@@ -8,6 +11,17 @@ import { CreateNodeParams } from '../models/ipc.model';
 const LABEL_MANAGED  = 'netlab.managed';
 const LABEL_NODE_ID  = 'netlab.node-id';
 const LABEL_NODE_NAME = 'netlab.node-name';
+
+// Stesso set di strumenti di rete su tutte e tre le distro, così il
+// comportamento non cambia in base all'immagine scelta dallo studente.
+const CUSTOM_IMAGE_PACKAGES_APT = 'iproute2 iptables bridge-utils tcpdump ethtool iputils-ping dnsutils curl wget vim nano traceroute';
+const CUSTOM_IMAGE_PACKAGES_APK = 'iproute2 iptables bridge-utils tcpdump ethtool iputils bind-tools curl wget vim nano traceroute';
+
+const CUSTOM_IMAGES: Record<string, string> = {
+  'netlab-alpine:v1': `FROM alpine:3.20\nRUN apk add --no-cache ${CUSTOM_IMAGE_PACKAGES_APK}\n`,
+  'netlab-debian:v1': `FROM debian:bookworm-slim\nRUN apt-get update && apt-get install -y --no-install-recommends ${CUSTOM_IMAGE_PACKAGES_APT} && rm -rf /var/lib/apt/lists/*\n`,
+  'netlab-ubuntu:v1': `FROM ubuntu:24.04\nRUN apt-get update && apt-get install -y --no-install-recommends ${CUSTOM_IMAGE_PACKAGES_APT} && rm -rf /var/lib/apt/lists/*\n`,
+};
 
 let nodes = new Map<string, LabNode>();
 
@@ -28,10 +42,36 @@ async function ensureImagePresent(image: string): Promise<void> {
   }
 }
 
+async function ensureCustomImageBuilt(tag: string, dockerfile: string): Promise<void> {
+  try {
+    await docker.getImage(tag).inspect();
+  } catch {
+    const contextPath = fs.mkdtempSync(path.join(os.tmpdir(), 'netlab-image-'));
+    fs.writeFileSync(path.join(contextPath, 'Dockerfile'), dockerfile);
+    const stream = await docker.buildImage({ context: contextPath, src: ['Dockerfile'] }, { t: tag });
+    await new Promise<void>((resolve, reject) => {
+      docker.modem.followProgress(stream, (err: Error | null) => err ? reject(err) : resolve());
+    });
+    fs.rmSync(contextPath, { recursive: true, force: true });
+  }
+}
+
 export const NodeService = {
 
   init(): void {
     nodes = new Map(DbService.getNodes().map(n => [n.id, n]));
+  },
+
+  // Buildate all'avvio dell'app (non pigramente alla prima creazione nodo),
+  // così lo studente non aspetta mai durante un esercizio in corso.
+  async ensureCustomImagesBuilt(): Promise<void> {
+    for (const [tag, dockerfile] of Object.entries(CUSTOM_IMAGES)) {
+      try {
+        await ensureCustomImageBuilt(tag, dockerfile);
+      } catch (e) {
+        logger.warn(`Build immagine "${tag}" fallita:`, e);
+      }
+    }
   },
 
   // after db init syncronize container states with docker

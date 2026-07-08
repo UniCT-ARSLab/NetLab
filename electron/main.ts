@@ -56,10 +56,14 @@ async function createWindow(): Promise<void> {
   // bisogno (creazione container) aspettano la stessa promise cachata.
   NetworkService.ensureFallbackTunnelsDisabled();
 
-  // riconciliazione db/docker
+  // riconciliazione db/docker + build delle immagini custom (alpine/debian/
+  // ubuntu con gli strumenti di rete). Le immagini vengono buildate qui,
+  // non alla prima creazione di un nodo, così lo studente non aspetta mai
+  // a metà di un esercizio — solo il primo avvio dell'app sarà più lento.
   Promise.all([
     NetworkService.reconcile(),
     NodeService.reconcileContainers(),
+    NodeService.ensureCustomImagesBuilt(),
   ])
     .then(() => win?.webContents.send('data:ready'))
     .catch(e => logger.warn('Reconciliation parziale:', e));
