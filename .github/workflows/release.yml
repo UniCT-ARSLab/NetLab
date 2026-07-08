@@ -1,0 +1,47 @@
+name: Release
+
+# Triggered by pushing a tag like v1.0.0 (git tag v1.0.0 && git push --tags).
+# Builds NetLab on all three platforms and attaches the installers to a
+# GitHub Release automatically — the .dmg specifically can only be built on
+# a real macOS host, which is why this needs three separate runners rather
+# than one cross-compiling job.
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            script: package:win
+          - os: macos-latest
+            script: package:mac
+          - os: ubuntu-latest
+            script: package:linux
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Build
+        run: npm run ${{ matrix.script }}
+
+      - name: Attach installers to the release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release/*.exe
+            release/*.dmg
+            release/*.AppImage
