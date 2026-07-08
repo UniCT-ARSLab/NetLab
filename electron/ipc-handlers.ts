@@ -181,6 +181,9 @@ function toUserError(e: unknown): Error {
       msg.includes('manifest for') || (code === 404 && msg.includes('image'))) {
     return new Error("Immagine Docker non trovata. Verifica il nome dell'immagine nella configurazione del nodo.");
   }
+  if (msg.includes('no such network') || (code === 404 && msg.includes('network'))) {
+    return new Error('La rete Docker di questo link non esiste più (forse cancellata da fuori l\'app). Riprova: NetLab la ricrea automaticamente al prossimo avvio del nodo.');
+  }
   if (msg.includes('pull access denied') || msg.includes('unauthorized') || msg.includes('authentication required')) {
     return new Error("Accesso all'immagine Docker negato. Verifica il nome dell'immagine.");
   }

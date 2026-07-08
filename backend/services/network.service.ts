@@ -57,6 +57,18 @@ async function execCapture(container: ReturnType<typeof docker.getContainer>, cm
   return demuxExecOutput(stream);
 }
 
+async function createDockerNetwork(name: string): Promise<{ id: string }> {
+  return docker.createNetwork({
+    Name: `netlab_${name}`,
+    Driver: 'bridge',
+    Options: {
+      'com.docker.network.bridge.enable_icc': 'true',
+      'com.docker.network.bridge.enable_ip_masquerade': 'false',
+    },
+    IPAM: { Driver: 'default', Config: [] },
+  });
+}
+
 function persist(): void {
   // runtime only
   const toSave = Array.from(links.values()).map(l => ({
@@ -122,15 +134,7 @@ export const NetworkService = {
   async createLink(name: string): Promise<LabLink> {
     if (links.has(name)) throw new Error(`Link "${name}" già esistente`);
 
-    const network = await docker.createNetwork({
-      Name: `netlab_${name}`,
-      Driver: 'bridge',
-      Options: {
-        'com.docker.network.bridge.enable_icc': 'true',
-        'com.docker.network.bridge.enable_ip_masquerade': 'false',
-      },
-      IPAM: { Driver: 'default', Config: [] },
-    });
+    const network = await createDockerNetwork(name);
 
     const link: LabLink = { name, dockerNetworkId: network.id, connectedNodes: [] };
     links.set(name, link);
@@ -203,9 +207,23 @@ export const NetworkService = {
     const link = links.get(linkName);
     if (!link?.dockerNetworkId) throw new Error(`Link "${linkName}" non trovato`);
 
-    const network = docker.getNetwork(link.dockerNetworkId);
+    let network = docker.getNetwork(link.dockerNetworkId);
 
-    let netInfo = await network.inspect();
+    // Se qualcuno ha cancellato la rete Docker da fuori l'app (es. da
+    // terminale) tra un avvio e l'altro, ricreiamola al volo invece di
+    // fallire in loop ogni volta: è una risorsa di nostra proprietà,
+    // riproducibile identica (stesso nome, stesse opzioni).
+    let netInfo;
+    try {
+      netInfo = await network.inspect();
+    } catch (e: any) {
+      if (e?.statusCode !== 404) throw e;
+      const recreated = await createDockerNetwork(linkName);
+      link.dockerNetworkId = recreated.id;
+      persist();
+      network = docker.getNetwork(recreated.id);
+      netInfo = await network.inspect();
+    }
     const alreadyConnected = !!(netInfo.Containers?.[node.containerId]);
 
     if (!alreadyConnected) {
