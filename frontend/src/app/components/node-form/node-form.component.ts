@@ -75,7 +75,7 @@ export class NodeFormComponent implements OnChanges {
   name           = '';
   nameError      = false;
   nameErrorShake = false;
-  image          = 'nicolaka/netshoot';
+  image          = 'netlab-alpine:v1';
   showAdvanced = false;
   limitCpu       = false;
   limitMemory    = false;
@@ -237,7 +237,7 @@ export class NodeFormComponent implements OnChanges {
   }
 
   private reset(): void {
-    this.name = ''; this.nameError = false; this.image = 'nicolaka/netshoot';
+    this.name = ''; this.nameError = false; this.image = 'netlab-alpine:v1';
     this.showAdvanced = false;
     this.limitCpu = false; this.limitMemory = false;
     this.cpuLimit = 1.0; this.memoryMb = 256;
