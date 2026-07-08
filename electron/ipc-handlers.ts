@@ -50,7 +50,10 @@ async function openNativeTerminal(containerId: string, nodeName: string): Promis
     // quoting entirely — cmd.exe just runs each line as-is.
     const dockerCmd = buildDockerExecCommand(containerId, '"');
     const batPath = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'netlab-term-')), 'open.bat');
-    fs.writeFileSync(batPath, `@title ${nodeName}\r\n${dockerCmd}\r\n`);
+    // @echo off + cls: without them cmd.exe echoes every line it reads from
+    // the .bat (including the docker exec command itself) before running it,
+    // cluttering the window on open — Linux/macOS terminals don't do this.
+    fs.writeFileSync(batPath, `@echo off\r\ntitle ${nodeName}\r\ncls\r\n${dockerCmd}\r\n`);
     await new Promise<void>((resolve, reject) => {
       // windowsVerbatimArguments: Node would otherwise add its own quoting on
       // top of the literal quotes we already embedded, doubling them up into
@@ -251,15 +254,23 @@ export function registerIpcHandlers(_win: BrowserWindow): void {
   });
 
   ipcMain.handle(IPC_CHANNELS.NODE_CREATE, async (_e, params: CreateNodeParams) => {
-    return NodeService.create(params);
+    try {
+      return await NodeService.create(params);
+    } catch (e) {
+      throw toUserError(e);
+    }
   });
 
   ipcMain.handle(IPC_CHANNELS.NODE_UPDATE, async (_e, id: string, params: CreateNodeParams) => {
-    const existing = NodeService.get(id);
-    if (existing?.internetFacing && params.internetFacing === false) {
-      await NetworkService.deleteWanBridge(id);
+    try {
+      const existing = NodeService.get(id);
+      if (existing?.internetFacing && params.internetFacing === false) {
+        await NetworkService.deleteWanBridge(id);
+      }
+      return NodeService.update(id, params);
+    } catch (e) {
+      throw toUserError(e);
     }
-    return NodeService.update(id, params);
   });
 
   ipcMain.handle(IPC_CHANNELS.NODE_START, async (_e, id: string) => {

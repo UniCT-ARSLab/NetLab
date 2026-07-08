@@ -429,6 +429,12 @@ export const NetworkService = {
     const link = links.get(name);
     if (!link) throw new Error(`Link "${name}" non trovato`);
 
+    const usedBy = NodeService.list().filter(n => n.interfaces.some(i => i.linkName === name));
+    if (usedBy.length > 0) {
+      const names = usedBy.map(n => `"${n.name}"`).join(', ');
+      throw new Error(`Impossibile eliminare il link "${name}": è ancora assegnato a ${usedBy.length === 1 ? 'questo nodo' : 'questi nodi'} (${names}). Rimuovi prima l'assegnazione dalle interfacce.`);
+    }
+
     if (link.dockerNetworkId) {
       try {
         await docker.getNetwork(link.dockerNetworkId).remove();

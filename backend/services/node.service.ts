@@ -29,6 +29,14 @@ function persist(): void {
   DbService.persistNodes(Array.from(nodes.values()));
 }
 
+// Docker imposta di default l'hostname interno del container all'ID troncato
+// (es. "58077d92f1ef"), che è quello che compare nel prompt della shell
+// (root@<hostname>). Lo sostituiamo col nome del nodo per rendere il
+// terminale leggibile, indipendentemente dall'immagine scelta.
+function sanitizeHostname(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/^-+|-+$/g, '').slice(0, 63) || 'netlab-node';
+}
+
 async function ensureImagePresent(image: string): Promise<void> {
   try {
     await docker.getImage(image).inspect();
@@ -169,6 +177,9 @@ export const NodeService = {
   update(id: string, params: CreateNodeParams): LabNode {
     const node = nodes.get(id);
     if (!node) throw new Error(`Nodo ${id} non trovato`);
+    if (Array.from(nodes.values()).some(n => n.id !== id && n.name === params.name)) {
+      throw new Error(`Esiste già un nodo con il nome "${params.name}"`);
+    }
 
     node.name = params.name;
     node.image = params.image;
@@ -224,6 +235,7 @@ export const NodeService = {
     const container = await docker.createContainer({
       name: node.name,
       Image: node.image,
+      Hostname: sanitizeHostname(node.name),
       Tty: true,
       OpenStdin: true,
       Labels: {
