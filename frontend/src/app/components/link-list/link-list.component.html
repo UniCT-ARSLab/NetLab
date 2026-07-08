@@ -10,11 +10,19 @@
 
 @if (showCreateInput) {
   <div class="link-create-row">
-    <input pInputText [(ngModel)]="newLinkName" [placeholder]="'links.placeholder' | translate"
+    <input pInputText [(ngModel)]="newLinkName" (ngModelChange)="nameError = false"
+      [placeholder]="'links.placeholder' | translate"
       (keyup.enter)="submitCreate()" class="link-create-input" />
-    <p-button icon="pi pi-check" [text]="true" size="small"
-      [disabled]="!newLinkName.trim()" (onClick)="submitCreate()" />
+    <p-button [icon]="nameErrorShake ? 'pi pi-times' : 'pi pi-check'" [text]="true" size="small"
+      [class.btn-shake]="nameErrorShake"
+      [disabled]="!newLinkName.trim() || nameErrorShake" (onClick)="submitCreate()" />
   </div>
+  @if (nameError) {
+    <small class="field-error">
+      <i class="pi pi-times-circle"></i>
+      <span>{{ 'form.name-duplicate-error' | translate }}</span>
+    </small>
+  }
 }
 
 @if (links().length === 0) {

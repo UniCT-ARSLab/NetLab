@@ -52,6 +52,32 @@
   min-width: 0;
 }
 
+.field-error {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0 12px 8px;
+  color: var(--p-red-500, #ef4444);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+@keyframes btn-shake {
+  0%   { transform: translateX(0); }
+  20%  { transform: translateX(-4px); }
+  40%  { transform: translateX(4px); }
+  60%  { transform: translateX(-3px); }
+  80%  { transform: translateX(3px); }
+  100% { transform: translateX(0); }
+}
+
+:host ::ng-deep .btn-shake .p-button {
+  animation: btn-shake 0.4s ease-in-out;
+  background: var(--p-red-500, #ef4444) !important;
+  border-color: var(--p-red-500, #ef4444) !important;
+  color: #fff !important;
+}
+
 .sidebar-empty {
   flex: 1;
   display: flex;

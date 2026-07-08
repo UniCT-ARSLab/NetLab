@@ -229,15 +229,6 @@ export class MainLayoutComponent implements OnInit {
     this.topologyView?.resetLayout();
   }
 
-  createLink(name: string): void {
-    this.networkService.createLink(name).subscribe({
-      next: () => {
-        this.messageService.add({ severity: 'success', summary: `Link "${name}"${this.t('links.created-suffix')}`, life: 3000 });
-      },
-      error: (e: Error) => this.showError(e),
-    });
-  }
-
   deleteLink(name: string): void {
     this.networkService.deleteLink(name).subscribe({
       next: () => this.messageService.add({ severity: 'info', summary: `Link "${name}"${this.t('links.deleted-suffix')}`, life: 3000 }),

@@ -5,7 +5,8 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { Button } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
 import { TooltipModule } from 'primeng/tooltip';
-import { TranslatePipe } from '@ngx-translate/core';
+import { MessageService, ConfirmationService } from 'primeng/api';
+import { TranslateService, TranslatePipe } from '@ngx-translate/core';
 import { NetworkService } from '../../services/network.service';
 import { LabLink } from '../../../../../backend/models/link.model';
 
@@ -17,25 +18,77 @@ import { LabLink } from '../../../../../backend/models/link.model';
   templateUrl: './link-list.component.html',
 })
 export class LinkListComponent {
-  @Output() createLink = new EventEmitter<string>();
   @Output() deleteLink = new EventEmitter<string>();
 
-  private networkService = inject(NetworkService);
+  private networkService      = inject(NetworkService);
+  private messageService      = inject(MessageService);
+  private confirmationService = inject(ConfirmationService);
+  private translate           = inject(TranslateService);
+
   links = toSignal(this.networkService.links$, { initialValue: [] as LabLink[] });
 
   showCreateInput = false;
   newLinkName = '';
+  nameError      = false;
+  nameErrorShake = false;
 
   toggleCreate(): void {
     this.showCreateInput = !this.showCreateInput;
     this.newLinkName = '';
+    this.nameError = false;
+    this.nameErrorShake = false;
   }
 
   submitCreate(): void {
     const name = this.newLinkName.trim();
     if (!name) return;
-    this.createLink.emit(name);
-    this.newLinkName = '';
-    this.showCreateInput = false;
+
+    if (this.links().some(l => l.name === name)) {
+      this.triggerNameError();
+      return;
+    }
+
+    this.networkService.createLink(name).subscribe({
+      next: () => {
+        this.messageService.add({
+          severity: 'success',
+          summary: `Link "${name}"${this.translate.instant('links.created-suffix')}`,
+          life: 3000,
+        });
+        this.newLinkName = '';
+        this.showCreateInput = false;
+      },
+      error: (e: Error) => {
+        // Race tra due finestre: il check sopra non l'ha visto, ma il
+        // backend rifiuta comunque — stesso trattamento inline, non il
+        // modale generico.
+        if (e.message.includes('già esistente')) {
+          this.triggerNameError();
+          return;
+        }
+        this.showError(e);
+      },
+    });
+  }
+
+  private triggerNameError(): void {
+    this.nameError = true;
+    this.nameErrorShake = false;
+    setTimeout(() => {
+      this.nameErrorShake = true;
+      setTimeout(() => { this.nameErrorShake = false; }, 500);
+    });
+  }
+
+  private showError(e: Error): void {
+    this.confirmationService.confirm({
+      message: e.message,
+      header: this.translate.instant('error.title'),
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: this.translate.instant('btn.ok'),
+      rejectVisible: false,
+      acceptButtonProps: { severity: 'danger' },
+      accept: () => {},
+    });
   }
 }
