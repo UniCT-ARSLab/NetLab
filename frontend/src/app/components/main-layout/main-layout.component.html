@@ -101,7 +101,7 @@
 
                 <div class="node-detail__meta">
                   <span class="meta-item">
-                    <i class="pi pi-box"></i>{{ selectedNode()!.image || '—' }}
+                    <i class="pi pi-box"></i>{{ imageLabel(selectedNode()!.image) || '—' }}
                   </span>
                   @if (selectedNode()!.cpuLimit) {
                     <span class="meta-item">

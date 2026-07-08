@@ -19,6 +19,7 @@ import { NodeService } from '../../services/node.service';
 import { NetworkService } from '../../services/network.service';
 import { LabNode } from '../../../../../backend/models/node.model';
 import { LabLink } from '../../../../../backend/models/link.model';
+import { IMAGE_OPTIONS } from '../../shared/image-options';
 
 interface InterfaceRow { name: string; linkName: string; }
 interface MountRow     { hostPath: string; containerPath: string; }
@@ -64,12 +65,7 @@ export class NodeFormComponent implements OnChanges {
     ];
   }
 
-  readonly imageOptions = [
-    { label: 'netshoot', value: 'nicolaka/netshoot' },
-    { label: 'alpine', value: 'netlab-alpine:v1' },
-    { label: 'debian', value: 'netlab-debian:v1' },
-    { label: 'ubuntu', value: 'netlab-ubuntu:v1' },
-  ];
+  readonly imageOptions = IMAGE_OPTIONS;
 
   name           = '';
   image          = 'nicolaka/netshoot';

@@ -18,6 +18,7 @@ import { LabNode, NodeStatus } from '../../../../../backend/models/node.model';
 import { LabLink } from '../../../../../backend/models/link.model';
 import { NetworkService } from '../../services/network.service';
 import { NodeService } from '../../services/node.service';
+import { imageLabel } from '../../shared/image-options';
 
 interface AddrRow  { name: string; state: string; ips: string; }
 interface RouteRow { dest: string; via: string;   dev: string; }
@@ -86,6 +87,7 @@ export class MainLayoutComponent implements OnInit {
   isSelectedNodeLoading = computed(() => this.loadingNodeIds().has(this.selectedNodeId() ?? ''));
 
   private t(key: string): string { return this.translate.instant(key); }
+  readonly imageLabel = imageLabel;
 
   private setLoading(id: string, on: boolean): void {
     this.loadingNodeIds.update(s => { const n = new Set(s); on ? n.add(id) : n.delete(id); return n; });

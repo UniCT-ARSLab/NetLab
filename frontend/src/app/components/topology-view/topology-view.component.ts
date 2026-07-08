@@ -6,6 +6,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { LabNode } from '../../../../../backend/models/node.model';
 import { LabLink } from '../../../../../backend/models/link.model';
+import { imageLabel } from '../../shared/image-options';
 
 const NODE_W   = 160;
 const NODE_H   = 56;
@@ -35,6 +36,7 @@ export class TopologyViewComponent implements OnChanges, AfterViewInit, OnDestro
 
   readonly NODE_W = NODE_W;
   readonly NODE_H = NODE_H;
+  readonly imageLabel = imageLabel;
 
   // Canvas pan/zoom
   panX      = PAD;
