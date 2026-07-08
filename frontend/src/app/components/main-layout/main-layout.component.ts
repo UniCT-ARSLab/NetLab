@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, signal, computed, inject, effect, untracked } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, HostListener, signal, computed, inject, effect, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -40,6 +40,7 @@ interface NetworkInfo { addr: AddrRow[]; routes: RouteRow[]; }
 
 export class MainLayoutComponent implements OnInit {
   @ViewChild(TopologyViewComponent) topologyView?: TopologyViewComponent;
+  @ViewChild('sidebarBody') sidebarBodyRef?: ElementRef<HTMLElement>;
 
   private networkService      = inject(NetworkService);
   private nodeService         = inject(NodeService);
@@ -49,6 +50,45 @@ export class MainLayoutComponent implements OnInit {
 
   showCreateDialog = false;
   showEditDialog   = false;
+
+  // Sidebar width and node/link list split are both user-resizable via drag
+  // handles — plain signals + document-level mouse listeners, same pattern
+  // topology-view uses for pan/zoom dragging.
+  sidebarWidth    = signal(260);
+  nodeListPercent = signal(50);
+
+  private sidebarDrag = { active: false, startX: 0, startWidth: 260 };
+  private splitDrag   = { active: false, startY: 0, startPercent: 50, containerHeight: 0 };
+
+  startSidebarResize(event: MouseEvent): void {
+    this.sidebarDrag = { active: true, startX: event.clientX, startWidth: this.sidebarWidth() };
+    event.preventDefault();
+  }
+
+  startSplitResize(event: MouseEvent): void {
+    const containerHeight = this.sidebarBodyRef?.nativeElement.clientHeight ?? 0;
+    this.splitDrag = { active: true, startY: event.clientY, startPercent: this.nodeListPercent(), containerHeight };
+    event.preventDefault();
+  }
+
+  @HostListener('document:mousemove', ['$event'])
+  onResizeMouseMove(event: MouseEvent): void {
+    if (this.sidebarDrag.active) {
+      const delta = event.clientX - this.sidebarDrag.startX;
+      this.sidebarWidth.set(Math.min(480, Math.max(200, this.sidebarDrag.startWidth + delta)));
+    }
+    if (this.splitDrag.active && this.splitDrag.containerHeight > 0) {
+      const delta = event.clientY - this.splitDrag.startY;
+      const deltaPercent = (delta / this.splitDrag.containerHeight) * 100;
+      this.nodeListPercent.set(Math.min(80, Math.max(20, this.splitDrag.startPercent + deltaPercent)));
+    }
+  }
+
+  @HostListener('document:mouseup')
+  onResizeMouseUp(): void {
+    this.sidebarDrag.active = false;
+    this.splitDrag.active = false;
+  }
 
   readonly isElectron = !!window.electronAPI;
 

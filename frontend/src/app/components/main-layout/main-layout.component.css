@@ -116,13 +116,55 @@
 }
 
 .netlab-sidebar {
-  width: 260px;
+  position: relative;
   flex-shrink: 0;
   border-right: 1px solid #3f3f46;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   background: #18181b;
+}
+
+.sidebar-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.sidebar-pane {
+  display: flex;
+  flex-direction: column;
+  min-height: 60px;
+  overflow: hidden;
+}
+
+.sidebar-split-handle {
+  height: 5px;
+  flex-shrink: 0;
+  cursor: row-resize;
+  background: transparent;
+}
+
+.sidebar-split-handle:hover {
+  background: var(--p-primary-color, #6366f1);
+  opacity: 0.6;
+}
+
+.sidebar-resize-handle {
+  position: absolute;
+  top: 0;
+  right: -3px;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 10;
+}
+
+.sidebar-resize-handle:hover {
+  background: var(--p-primary-color, #6366f1);
+  opacity: 0.5;
 }
 
 .netlab-canvas {

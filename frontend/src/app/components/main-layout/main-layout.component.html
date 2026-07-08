@@ -39,14 +39,22 @@
 
   <div class="netlab-body">
 
-    <aside class="netlab-sidebar">
-      <app-node-list
-        [selectedNodeId]="selectedNodeId()"
-        [loadingNodeIds]="loadingNodeIds()"
-        (nodeSelected)="onNodeSelected($event)"
-        (createRequested)="showCreateDialog = true" />
-      <app-link-list
-        (deleteLink)="deleteLink($event)" />
+    <aside class="netlab-sidebar" [style.width.px]="sidebarWidth()">
+      <div class="sidebar-body" #sidebarBody>
+        <div class="sidebar-pane" [style.flex]="nodeListPercent() + ' 1 0'">
+          <app-node-list
+            [selectedNodeId]="selectedNodeId()"
+            [loadingNodeIds]="loadingNodeIds()"
+            (nodeSelected)="onNodeSelected($event)"
+            (createRequested)="showCreateDialog = true" />
+        </div>
+        <div class="sidebar-split-handle" (mousedown)="startSplitResize($event)"></div>
+        <div class="sidebar-pane" [style.flex]="(100 - nodeListPercent()) + ' 1 0'">
+          <app-link-list
+            (deleteLink)="deleteLink($event)" />
+        </div>
+      </div>
+      <div class="sidebar-resize-handle" (mousedown)="startSidebarResize($event)"></div>
     </aside>
 
     <main class="netlab-canvas">
