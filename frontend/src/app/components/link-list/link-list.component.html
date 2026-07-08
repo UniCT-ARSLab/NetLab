@@ -9,7 +9,7 @@
 </div>
 
 @if (showCreateInput) {
-  <div class="link-create-row">
+  <div class="link-create-row" #createRow>
     <input pInputText [(ngModel)]="newLinkName" (ngModelChange)="nameError = false"
       [placeholder]="'links.placeholder' | translate"
       (keyup.enter)="submitCreate()" class="link-create-input" />

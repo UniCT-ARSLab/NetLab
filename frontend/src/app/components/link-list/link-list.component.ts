@@ -1,4 +1,4 @@
-import { Component, Output, EventEmitter, inject } from '@angular/core';
+import { Component, Output, EventEmitter, inject, ElementRef, ViewChild, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -27,10 +27,28 @@ export class LinkListComponent {
 
   links = toSignal(this.networkService.links$, { initialValue: [] as LabLink[] });
 
+  @ViewChild('createRow') createRowRef?: ElementRef<HTMLElement>;
+
   showCreateInput = false;
   newLinkName = '';
   nameError      = false;
   nameErrorShake = false;
+
+  // Click-outside instead of (blur): blur fires on mousedown, before the
+  // confirm button's own click handler runs, which would close (and wipe)
+  // the row before submitCreate() even gets to show the duplicate-name
+  // error. A document-level click always fires after the target's own
+  // handler, so by the time we check, submitCreate() has already run.
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (!this.showCreateInput) return;
+    if (this.createRowRef && !this.createRowRef.nativeElement.contains(event.target as Node)) {
+      this.showCreateInput = false;
+      this.newLinkName = '';
+      this.nameError = false;
+      this.nameErrorShake = false;
+    }
+  }
 
   toggleCreate(): void {
     this.showCreateInput = !this.showCreateInput;

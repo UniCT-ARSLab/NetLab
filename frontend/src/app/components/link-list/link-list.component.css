@@ -78,6 +78,10 @@
   color: #fff !important;
 }
 
+:host ::ng-deep .btn-shake .p-button .p-button-icon {
+  color: #fff !important;
+}
+
 .sidebar-empty {
   flex: 1;
   display: flex;

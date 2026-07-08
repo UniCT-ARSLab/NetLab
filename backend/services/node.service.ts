@@ -29,6 +29,24 @@ function persist(): void {
   DbService.persistNodes(Array.from(nodes.values()));
 }
 
+// Un container NetLab orfano (managed da noi, ma il cui id non è più
+// tracciato da nessun nodo — es. DB cancellato/corrotto, o rimosso a mano
+// mantenendo il nome) può bloccare la creazione di un nuovo container con
+// lo stesso nome. Se è davvero nostro e non appartiene a un altro nodo
+// attivo, lo rimuoviamo e si riprova, invece di restare bloccati per sempre.
+async function removeOrphanedContainerByName(name: string): Promise<boolean> {
+  const all = await docker.listContainers({ all: true });
+  const match = all.find(c => c.Names.some(n => n === `/${name}`));
+  if (!match || !match.Labels?.[LABEL_MANAGED]) return false;
+  if (Array.from(nodes.values()).some(n => n.containerId === match.Id)) return false;
+  try {
+    await docker.getContainer(match.Id).remove({ force: true });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function ensureCustomImageBuilt(tag: string, dockerfile: string): Promise<void> {
   try {
     await docker.getImage(tag).inspect();
@@ -234,7 +252,7 @@ export const NodeService = {
 
     await ensureImagePresent(node.image);
 
-    const container = await docker.createContainer({
+    const containerOptions = {
       name: node.name,
       Image: node.image,
       Tty: true,
@@ -250,7 +268,19 @@ export const NodeService = {
         ...(node.cpuLimit ? { NanoCpus: Math.round(node.cpuLimit * 1e9) } : {}),
         ...(node.memoryMb ? { Memory: node.memoryMb * 1024 * 1024 } : {}),
       },
-    });
+    };
+
+    let container;
+    try {
+      container = await docker.createContainer(containerOptions);
+    } catch (e: any) {
+      // Un container NetLab orfano con lo stesso nome (DB disallineato da
+      // manipolazioni esterne a Docker) blocca la creazione col classico 409
+      // "name already in use" — se è davvero nostro e non di un altro nodo
+      // attivo, lo ripuliamo e riproviamo una sola volta.
+      if (e?.statusCode !== 409 || !(await removeOrphanedContainerByName(node.name))) throw e;
+      container = await docker.createContainer(containerOptions);
+    }
 
     await container.start();
 

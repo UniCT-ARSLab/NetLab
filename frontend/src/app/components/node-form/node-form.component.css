@@ -57,6 +57,12 @@
   animation: btn-shake 0.4s ease-in-out;
   background: var(--p-red-500, #ef4444) !important;
   border-color: var(--p-red-500, #ef4444) !important;
+  color: #fff !important;
+}
+
+:host ::ng-deep .btn-shake .p-button .p-button-icon,
+:host ::ng-deep .btn-shake .p-button .p-button-label {
+  color: #fff !important;
 }
 
 .field-row {
