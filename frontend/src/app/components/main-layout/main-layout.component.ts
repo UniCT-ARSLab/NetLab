@@ -146,11 +146,16 @@ export class MainLayoutComponent implements OnInit {
   onNodeCreated(): void {
     this.showCreateDialog = false;
     this.messageService.add({ severity: 'success', summary: this.t('node.created'), life: 3000 });
+    // Interfacce assegnate a un link cambiano il suo connectedNodes anche
+    // senza avviare il nodo — i link vanno ricaricati anche qui, non solo
+    // dopo start/stop.
+    this.networkService.loadLinks().subscribe();
   }
 
   onNodeUpdated(): void {
     this.showEditDialog = false;
     this.messageService.add({ severity: 'success', summary: this.t('node.updated'), life: 3000 });
+    this.networkService.loadLinks().subscribe();
   }
 
   onDelete(): void {
@@ -170,6 +175,7 @@ export class MainLayoutComponent implements OnInit {
             this.setLoading(node.id, false);
             this.selectedNodeId.set(null);
             this.messageService.add({ severity: 'info', summary: `"${node.name}"${this.t('node.deleted-suffix')}`, life: 3000 });
+            this.networkService.loadLinks().subscribe();
           },
           error: (e: Error) => { this.setLoading(node.id, false); this.showError(e); },
         });
