@@ -166,10 +166,10 @@
 
   <ng-template #footer>
     <p-button [label]="'btn.cancel' | translate" severity="secondary" (onClick)="visibleChange.emit(false)" />
-    <p-button
+    <p-button #submitBtn
       [label]="editNode ? ('btn.save' | translate) : ('btn.create-node' | translate)"
       [icon]="editNode ? 'pi pi-check' : 'pi pi-plus'"
-      [class.btn-shake]="nameErrorShake"
+      [severity]="nameErrorShake ? 'danger' : undefined"
       (onClick)="submit()"
       [disabled]="!isValid()" />
   </ng-template>

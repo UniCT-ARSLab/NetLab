@@ -48,13 +48,17 @@
             (nodeSelected)="onNodeSelected($event)"
             (createRequested)="showCreateDialog = true" />
         </div>
-        <div class="sidebar-split-handle" (mousedown)="startSplitResize($event)"></div>
+        <div class="sidebar-split-handle" (mousedown)="startSplitResize($event)">
+          <i class="pi pi-ellipsis-h sidebar-split-handle__grip"></i>
+        </div>
         <div class="sidebar-pane" [style.flex]="(100 - nodeListPercent()) + ' 1 0'">
           <app-link-list
             (deleteLink)="deleteLink($event)" />
         </div>
       </div>
-      <div class="sidebar-resize-handle" (mousedown)="startSidebarResize($event)"></div>
+      <div class="sidebar-resize-handle" (mousedown)="startSidebarResize($event)">
+        <i class="pi pi-ellipsis-v sidebar-resize-handle__grip"></i>
+      </div>
     </aside>
 
     <main class="netlab-canvas">

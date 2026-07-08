@@ -141,10 +141,20 @@
 }
 
 .sidebar-split-handle {
-  height: 5px;
+  position: relative;
+  height: 9px;
   flex-shrink: 0;
   cursor: row-resize;
   background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar-split-handle__grip {
+  font-size: 0.7rem;
+  color: #52525b;
+  pointer-events: none;
 }
 
 .sidebar-split-handle:hover {
@@ -152,19 +162,36 @@
   opacity: 0.6;
 }
 
+.sidebar-split-handle:hover .sidebar-split-handle__grip {
+  color: #fff;
+}
+
 .sidebar-resize-handle {
   position: absolute;
   top: 0;
-  right: -3px;
-  width: 6px;
+  right: -6px;
+  width: 12px;
   height: 100%;
   cursor: col-resize;
   z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar-resize-handle__grip {
+  font-size: 0.7rem;
+  color: #52525b;
+  pointer-events: none;
 }
 
 .sidebar-resize-handle:hover {
   background: var(--p-primary-color, #6366f1);
   opacity: 0.5;
+}
+
+.sidebar-resize-handle:hover .sidebar-resize-handle__grip {
+  color: #fff;
 }
 
 .netlab-canvas {

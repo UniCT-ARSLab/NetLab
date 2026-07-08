@@ -28,11 +28,13 @@ export class LinkListComponent {
   links = toSignal(this.networkService.links$, { initialValue: [] as LabLink[] });
 
   @ViewChild('createRow') createRowRef?: ElementRef<HTMLElement>;
+  @ViewChild('confirmBtn', { read: ElementRef }) confirmBtnRef?: ElementRef<HTMLElement>;
 
   showCreateInput = false;
   newLinkName = '';
   nameError      = false;
   nameErrorShake = false;
+  private shakeTimeout?: ReturnType<typeof setTimeout>;
 
   // Click-outside instead of (blur): blur fires on mousedown, before the
   // confirm button's own click handler runs, which would close (and wipe)
@@ -89,13 +91,25 @@ export class LinkListComponent {
     });
   }
 
+  // Direct DOM classList + forced reflow instead of an Angular class binding:
+  // triggered identically from a click or an Enter keypress, and replays
+  // every time even on back-to-back submits with the class already present
+  // (an Angular [class.x] binding wouldn't re-trigger the CSS animation if
+  // the value doesn't actually change from false to true first).
   private triggerNameError(): void {
     this.nameError = true;
-    this.nameErrorShake = false;
-    setTimeout(() => {
-      this.nameErrorShake = true;
-      setTimeout(() => { this.nameErrorShake = false; }, 500);
-    });
+    this.nameErrorShake = true;
+    const el = this.confirmBtnRef?.nativeElement;
+    if (el) {
+      el.classList.remove('btn-shake');
+      void el.offsetWidth; // force reflow so a repeated animation restarts
+      el.classList.add('btn-shake');
+    }
+    clearTimeout(this.shakeTimeout);
+    this.shakeTimeout = setTimeout(() => {
+      this.nameErrorShake = false;
+      el?.classList.remove('btn-shake');
+    }, 500);
   }
 
   private showError(e: Error): void {

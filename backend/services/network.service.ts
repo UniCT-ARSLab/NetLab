@@ -218,6 +218,7 @@ export const NetworkService = {
       netInfo = await network.inspect();
     } catch (e: any) {
       if (e?.statusCode !== 404) throw e;
+      logger.warn(`[attachInterface] rete Docker del link "${linkName}" non trovata (cancellata da fuori l'app?), la ricreo`);
       const recreated = await createDockerNetwork(linkName);
       link.dockerNetworkId = recreated.id;
       persist();

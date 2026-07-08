@@ -50,19 +50,10 @@
   100% { transform: translateX(0); }
 }
 
-/* Transient class, added and removed by the component around the animation
-   duration — the red background is only ever applied while it's present,
-   so the button reverts to its normal color on its own once it's removed. */
-:host ::ng-deep .btn-shake .p-button {
+/* Color/fill during the shake come from PrimeNG's own severity="danger"
+   button style, bound in the template — no CSS override needed. */
+:host ::ng-deep .btn-shake {
   animation: btn-shake 0.4s ease-in-out;
-  background: var(--p-red-500, #ef4444) !important;
-  border-color: var(--p-red-500, #ef4444) !important;
-  color: #fff !important;
-}
-
-:host ::ng-deep .btn-shake .p-button .p-button-icon,
-:host ::ng-deep .btn-shake .p-button .p-button-label {
-  color: #fff !important;
 }
 
 .field-row {

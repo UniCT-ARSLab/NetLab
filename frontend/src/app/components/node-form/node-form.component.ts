@@ -1,5 +1,6 @@
 import {
-  Component, Input, Output, EventEmitter, inject, computed, OnChanges, SimpleChanges, ChangeDetectorRef
+  Component, Input, Output, EventEmitter, inject, computed, OnChanges, SimpleChanges, ChangeDetectorRef,
+  ElementRef, ViewChild,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -43,6 +44,9 @@ export class NodeFormComponent implements OnChanges {
   private confirmationService = inject(ConfirmationService);
   private translate      = inject(TranslateService);
   private cdr            = inject(ChangeDetectorRef);
+
+  @ViewChild('submitBtn', { read: ElementRef }) submitBtnRef?: ElementRef<HTMLElement>;
+  private shakeTimeout?: ReturnType<typeof setTimeout>;
 
   links = toSignal(this.networkService.links$, { initialValue: [] as LabLink[] });
   private allNodes = toSignal(this.nodeService.nodes$, { initialValue: [] as LabNode[] });
@@ -200,16 +204,23 @@ export class NodeFormComponent implements OnChanges {
     this.showError(e);
   }
 
-  // The shake class is added and removed around the animation's duration so
-  // it replays every time (a static true/true toggle wouldn't restart a CSS
-  // animation), while nameError itself stays on to keep the inline text.
+  // Direct DOM classList + forced reflow instead of an Angular class
+  // binding: replays every time even on back-to-back submits, and doesn't
+  // depend on the change-detection timing of whatever triggered submit().
   private triggerNameError(): void {
     this.nameError = true;
-    this.nameErrorShake = false;
-    setTimeout(() => {
-      this.nameErrorShake = true;
-      setTimeout(() => { this.nameErrorShake = false; }, 400);
-    });
+    this.nameErrorShake = true;
+    const el = this.submitBtnRef?.nativeElement;
+    if (el) {
+      el.classList.remove('btn-shake');
+      void el.offsetWidth;
+      el.classList.add('btn-shake');
+    }
+    clearTimeout(this.shakeTimeout);
+    this.shakeTimeout = setTimeout(() => {
+      this.nameErrorShake = false;
+      el?.classList.remove('btn-shake');
+    }, 400);
   }
 
   private showError(e: Error): void {

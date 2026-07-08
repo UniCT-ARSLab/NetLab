@@ -38,13 +38,16 @@
   margin-left: auto;
 }
 
+.link-create-box {
+  border-bottom: 1px solid #3f3f46;
+  flex-shrink: 0;
+}
+
 .link-create-row {
   display: flex;
   align-items: center;
   gap: 6px;
   padding: 8px 12px;
-  border-bottom: 1px solid #3f3f46;
-  flex-shrink: 0;
 }
 
 .link-create-input {
@@ -71,15 +74,11 @@
   100% { transform: translateX(0); }
 }
 
-:host ::ng-deep .btn-shake .p-button {
+/* Color/fill during the shake come from PrimeNG's own severity="danger"
+   (non-text) button style, applied via bindings in the template — no CSS
+   override needed, so it can't be fought by the theme's own specificity. */
+:host ::ng-deep .btn-shake {
   animation: btn-shake 0.4s ease-in-out;
-  background: var(--p-red-500, #ef4444) !important;
-  border-color: var(--p-red-500, #ef4444) !important;
-  color: #fff !important;
-}
-
-:host ::ng-deep .btn-shake .p-button .p-button-icon {
-  color: #fff !important;
 }
 
 .sidebar-empty {
