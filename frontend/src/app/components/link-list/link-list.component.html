@@ -13,7 +13,7 @@
     <div class="link-create-row">
       <input pInputText [(ngModel)]="newLinkName" (ngModelChange)="nameError = false"
         [placeholder]="'links.placeholder' | translate"
-        (keyup.enter)="submitCreate()" class="link-create-input" />
+        (keyup.enter)="submitCreate()" (keyup.escape)="toggleCreate()" class="link-create-input" />
       <p-button #confirmBtn [icon]="nameErrorShake ? 'pi pi-times' : 'pi pi-check'"
         [text]="!nameErrorShake" [severity]="nameErrorShake ? 'danger' : undefined" size="small"
         [disabled]="!newLinkName.trim() || nameErrorShake" (onClick)="submitCreate()" />

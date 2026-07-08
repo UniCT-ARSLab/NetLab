@@ -142,24 +142,27 @@
 
 .sidebar-split-handle {
   position: relative;
-  height: 9px;
+  z-index: 5;
+  height: 13px;
   flex-shrink: 0;
   cursor: row-resize;
-  background: transparent;
+  background: #101012;
+  border-top: 1px solid #3f3f46;
+  border-bottom: 1px solid #3f3f46;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .sidebar-split-handle__grip {
-  font-size: 0.7rem;
-  color: #52525b;
+  font-size: 0.75rem;
+  color: #71717a;
   pointer-events: none;
 }
 
 .sidebar-split-handle:hover {
   background: var(--p-primary-color, #6366f1);
-  opacity: 0.6;
+  opacity: 0.8;
 }
 
 .sidebar-split-handle:hover .sidebar-split-handle__grip {
@@ -169,8 +172,8 @@
 .sidebar-resize-handle {
   position: absolute;
   top: 0;
-  right: -6px;
-  width: 12px;
+  right: -7px;
+  width: 14px;
   height: 100%;
   cursor: col-resize;
   z-index: 10;
@@ -180,7 +183,7 @@
 }
 
 .sidebar-resize-handle__grip {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   color: #52525b;
   pointer-events: none;
 }
