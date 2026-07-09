@@ -50,7 +50,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           name: NetLab ${{ github.ref_name }}
-          generate_release_notes: true
+          body: "NetLab per Windows, macOS e Linux."
           files: |
             release/*.exe
             release/*.dmg
