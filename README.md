@@ -43,7 +43,3 @@ See the [user guide](docs/user-guide.md) for a step-by-step walkthrough of build
 ## Development
 
 See the [developer guide](docs/developer-guide.md) for the project's architecture, how to run it locally, and how to build a release.
-
-## License
-
-*(TBD)*
