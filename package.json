@@ -2,6 +2,7 @@
   "name": "netlab-app",
   "version": "0.1.0",
   "description": "Network Lab tool for students",
+  "author": "OttavioCas",
   "main": "dist/electron/main.js",
   "scripts": {
     "start": "concurrently \"npm run start:frontend\" \"npm run start:backend\"",
