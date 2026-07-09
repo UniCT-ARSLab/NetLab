@@ -37,7 +37,14 @@ jobs:
           node-version: 20
 
       - name: Build
-        run: npm run ${{ matrix.script }}
+        shell: bash
+        run: |
+          for attempt in 1 2 3; do
+            npm run ${{ matrix.script }} && exit 0
+            echo "Attempt $attempt failed (likely a flaky Electron binary download), retrying in 20s..."
+            sleep 20
+          done
+          exit 1
 
       - name: Attach installers to the release
         uses: softprops/action-gh-release@v2
