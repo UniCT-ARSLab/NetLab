@@ -5,11 +5,11 @@
   "main": "dist/electron/main.js",
   "scripts": {
     "start": "concurrently \"npm run start:frontend\" \"npm run start:backend\"",
-    "start:frontend": "cd frontend && ng serve",
+    "start:frontend": "cd frontend && npx ng serve",
     "start:backend": "tsc -p tsconfig.backend.json --watch",
     "electron": "wait-on http://localhost:4200 && electron .",
     "dev": "concurrently \"npm run start:frontend\" \"npm run start:backend\" \"npm run electron\"",
-    "build:frontend": "cd frontend && ng build --output-path ../dist/frontend --base-href ./",
+    "build:frontend": "cd frontend && npx ng build --output-path ../dist/frontend --base-href ./",
     "build:backend": "tsc -p tsconfig.backend.json",
     "build:all": "npm run build:frontend && npm run build:backend",
     "package": "npm install && cd frontend && npm install && cd .. && npm run build:all && electron-builder",
