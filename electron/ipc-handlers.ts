@@ -199,6 +199,8 @@ function toUserError(e: unknown): Error {
   return e instanceof Error ? e : new Error(e instanceof Error ? e.message : String(e));
 }
 
+let handlersRegistered = false;
+
 export function registerIpcHandlers(_win: BrowserWindow): void {
 
   // WINDOW
@@ -209,7 +211,14 @@ export function registerIpcHandlers(_win: BrowserWindow): void {
   _win.on('maximize',   () => pushMaxState(_win, true));
   _win.on('unmaximize', () => pushMaxState(_win, false));
 
-  
+  // ipcMain.handle() registrations are global to the process, not scoped to
+  // a window. On macOS, closing the window doesn't quit the app; clicking
+  // the Dock icon calls createWindow() again, which used to re-run this
+  // whole function and throw "second handler for X", aborting before
+  // win.loadFile() ran and leaving a blank window. Register handlers once.
+  if (handlersRegistered) return;
+  handlersRegistered = true;
+
   const savedBounds = new Map<number, Electron.Rectangle>();
 
   ipcMain.handle('win:minimize', (_e) => BrowserWindow.fromWebContents(_e.sender)?.minimize());
