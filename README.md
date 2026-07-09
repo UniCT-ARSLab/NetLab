@@ -32,9 +32,15 @@ Download the installer for your platform from the [Releases page](../../releases
 
 - **Windows** — `NetLab Setup x.y.z.exe`
 - **macOS** — `NetLab-x.y.z.dmg`
-- **Linux** — `NetLab-x.y.z.AppImage` (self-contained, no installation needed — just make it executable and run it)
+- **Linux** — `NetLab-x.y.z.AppImage` (self-contained — `chmod +x` it and run it) or `netlab-app_x.y.z_amd64.deb` (install with `sudo apt install ./netlab-app_x.y.z_amd64.deb`)
 
 Make sure Docker is running before you launch NetLab.
+
+NetLab isn't code-signed (that requires a paid certificate), so the OS will warn you the first time you run it — this is the same warning any unsigned app triggers, not something specific to NetLab:
+
+- **Windows**: SmartScreen shows "Windows protected your PC". Click **More info**, then **Run anyway**. If it was blocked silently instead, go to **Settings → Privacy & security → Windows Security → Virus & threat protection → Protection history** to allow it.
+- **macOS**: Gatekeeper refuses to open it ("cannot be opened because the developer cannot be verified"). Go to **System Settings → Privacy & Security**, scroll down, and click **Open Anyway** next to the NetLab message.
+- **Linux (AppImage)**: needs `libfuse2` installed (`sudo apt install libfuse2`, or `libfuse2t64` on newer distros) — without it the AppImage fails to mount and won't start. The `.deb` package doesn't have this requirement.
 
 ## Getting started
 

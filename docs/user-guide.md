@@ -144,3 +144,5 @@ Click the language toggle in the top-right corner of the toolbar to switch betwe
 - **A custom image (Alpine/Debian/Ubuntu) is missing** — same story: NetLab rebuilds it automatically the next time you start a node that needs it. The very first rebuild takes a little longer.
 - **"A container with this name already exists"** — usually means a leftover container from a previous crash/manual `docker` command. If it's one NetLab created and isn't in use by another node, NetLab removes it and retries automatically; if the message persists, check `docker ps -a` for a stray container with that name.
 - **A link can't be deleted** — it's still assigned to at least one node's interface (the delete button is disabled with a tooltip explaining this). Remove the interface assignment first.
+- **Windows/macOS won't let the installer run** — NetLab isn't code-signed, so SmartScreen/Gatekeeper warns on first launch. See the [README](../README.md#installation) for how to allow it.
+- **The Linux AppImage does nothing when launched** — install `libfuse2` (`sudo apt install libfuse2`), or use the `.deb` package instead.
