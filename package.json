@@ -37,6 +37,7 @@
     "productName": "NetLab",
     "copyright": "Copyright © 2026 NetLab",
     "icon": "build/icon.png",
+    "publish": null,
     "directories": {
       "output": "release"
     },
